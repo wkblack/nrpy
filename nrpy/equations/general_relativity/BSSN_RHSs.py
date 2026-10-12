@@ -292,12 +292,19 @@ class BSSNRHSs:
 
         if enable_YBS_Gamma_constraint_adjustment:
             YBS_chi = sp.Symbol("YBS_chi", real=True)
+            # Sign-definite piece: damps only where the shift divergence is
+            # positive. P(x) = (x + sqrt(x^2 + eps^2))/2 is max(x, 0) at eps = 0
+            # and a smooth approximation for eps > 0 (eps in units of 1/M).
+            YBS_chi_pos = sp.Symbol("YBS_chi_pos", real=True)
+            YBS_POS_EPS = sp.Symbol("YBS_POS_EPS", real=True)
+            divbeta_pos = sp.Rational(1, 2) * (
+                Dbarbetacontraction
+                + sp.sqrt(Dbarbetacontraction**2 + YBS_POS_EPS**2)
+            )
             for i in range(3):
-                self.Lambdabar_rhsU[i] += (
-                    -YBS_chi
-                    * (LambdabarU[i] - DGammaU[i])
-                    * Dbarbetacontraction
-                )
+                self.Lambdabar_rhsU[i] += -(
+                    YBS_chi * Dbarbetacontraction + YBS_chi_pos * divbeta_pos
+                ) * (LambdabarU[i] - DGammaU[i])
 
         # Step 6.d: Term 4 of \partial_t \bar{\Lambda}^i:
         #           \frac{1}{3} \bar{D}^{i} \bar{D}_{j} \beta^{j}

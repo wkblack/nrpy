@@ -124,6 +124,22 @@ def register_CFunction_rhs_eval(
                     "values should not be used."
                 ),
             )
+            par.register_CodeParameter(
+                "REAL",
+                __name__,
+                "YBS_chi_pos",
+                0.0,
+                add_to_parfile=True,
+                description="Sign-definite YBS-Gamma coefficient: adds -YBS_chi_pos*P(Dbar_k beta^k)*C^i, P(x)=(x+sqrt(x^2+YBS_POS_EPS^2))/2, damping only where the shift divergence is positive. 0 = off (default).",
+            )
+            par.register_CodeParameter(
+                "REAL",
+                __name__,
+                "YBS_POS_EPS",
+                0.0,
+                add_to_parfile=True,
+                description="Smoothing scale (1/M) for the sign-definite YBS-Gamma term; 0 gives max(x,0) exactly (default).",
+            )
         if enable_YBS_momentum_constraint_adjustment:
             par.register_CodeParameters(
                 "REAL",
