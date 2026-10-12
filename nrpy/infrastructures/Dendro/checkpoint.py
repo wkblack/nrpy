@@ -77,13 +77,33 @@ def output_checkpoint_cpp(
             parameter_write_lines.append(
                 f'    metadata["NRPY_PARAMETERS"]["{name}"] = params.{name};'
             )
-            parameter_check_lines.append(
-                f'        if (parameters.at("{name}").get<{cpp_type}>() != '
-                f"params.{name}) metadata_valid = false;"
-            )
+            if name == "POWER":
+                parameter_check_lines.append(
+                    '        if (!legacy_power && parameters.at("POWER").get<DendroScalar>() != '
+                    "params.POWER) metadata_valid = false;"
+                )
+            else:
+                parameter_check_lines.append(
+                    f'        if (parameters.at("{name}").get<{cpp_type}>() != '
+                    f"params.{name}) metadata_valid = false;"
+                )
 
     field_literals = ",\n".join(f'        "{name}"' for name in evolved_names)
     parameter_literals = ",\n".join(f'        "{name}"' for name in parameter_names)
+    legacy_power_check = ""
+    if "POWER" in parameter_names:
+        old_parameter_literals = ",\n".join(
+            f'        "{name}"' for name in parameter_names if name != "POWER"
+        )
+        legacy_power_check = f"""
+        const std::vector<std::string> legacy_parameter_names{{
+{old_parameter_literals}
+        }};
+        const bool legacy_power =
+            params.POWER == 1.0 && !parameters.contains("POWER") &&
+            metadata.at("NRPY_PARAMETER_NAMES").get<std::vector<std::string>>() ==
+                legacy_parameter_names;
+"""
     parameter_writes = "\n".join(parameter_write_lines)
     parameter_checks = "\n".join(parameter_check_lines)
     namespace_alias = f"namespace generated = {solver_namespace}::generated;"
@@ -324,11 +344,12 @@ int {solver_stem}_restore_checkpoint(
         const std::vector<std::string> expected_parameters{{
 {parameter_literals}
         }};
+        const json& parameters = metadata.at("NRPY_PARAMETERS");
+{legacy_power_check}
         if (metadata.at("NRPY_PARAMETER_NAMES")
-                .get<std::vector<std::string>>() != expected_parameters) {{
+                .get<std::vector<std::string>>() != expected_parameters{" && !legacy_power" if "POWER" in parameter_names else ""}) {{
             metadata_valid = false;
         }}  // END IF: parameter-name list mismatch
-        const json& parameters = metadata.at("NRPY_PARAMETERS");
 {parameter_checks}
         const DendroScalar stored_residual =
             metadata.at("NRPY_PROJECTED_ALGEBRAIC_RESIDUAL")

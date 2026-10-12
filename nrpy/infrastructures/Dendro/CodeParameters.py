@@ -303,11 +303,15 @@ def register_CFunctions_parameters(solver_stem: str, solver_namespace: str) -> N
             f"if (!std::isfinite(params.{cp_name})) {{ ok = false; }}"
             f"  // END IF: non-finite {cp_name}"
         )
+    if "POWER" in names:
+        validate_lines.append(
+            "if (params.POWER < 0.0) { ok = false; }  // END IF: negative POWER"
+        )
     validate_lines.append("return ok;")
-    validate_desc = """Check that every floating-point parameter is finite.
+    validate_desc = """Check finite floating-point parameters and nonnegative POWER when present.
 
 @param[in] params Parameter table to check.
-@return true if every floating-point parameter is finite, otherwise false.
+@return true if the runtime parameters are valid, otherwise false.
 """
     validate_cfunc_type = "bool"
     validate_name = f"{solver_stem}_params_validate"

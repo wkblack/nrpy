@@ -15,6 +15,7 @@ Author: Zachariah B. Etienne
 
 import nrpy.params as par
 from nrpy.infrastructures.Dendro.CodeParameters import (
+    emitted_parameter_names,
     output_toml_bindings,
     output_toml_default_assignments,
 )
@@ -1019,6 +1020,13 @@ int main(int argc, char** argv) {
         + solver_stem
         + r"""_params_validate(params))
       throw std::runtime_error("invalid runtime parameters");
+"""
+        + (
+            '    if (rank == 0) std::cout << "momentum W prefactor: POWER=" << params.POWER << "\\n";\n'
+            if "POWER" in emitted_parameter_names()
+            else ""
+        )
+        + r"""
     const std::string output_prefix = parameters.get<std::string>(
         "BSSN_PROFILE_FILE_PREFIX", """
         + '"dat/dgr"'

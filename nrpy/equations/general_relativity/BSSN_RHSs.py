@@ -45,7 +45,7 @@ class BSSNRHSs:
         :param enable_YBS_Gamma_constraint_adjustment: Whether to enable the YBS Gamma-constraint adjustment.
         :param enable_YBS_momentum_constraint_adjustment: Whether to enable the
             Yo--Lin--Cao momentum-constraint adjustment, whose coefficient
-            C_YBS_mom * CFL_FACTOR * dsmin is multiplied by the conformal factor W.
+            C_YBS_mom * CFL_FACTOR * dsmin is multiplied by W**POWER (default POWER=1).
 
         :raises ValueError: If EvolvedConformalFactor_cf parameter is set to an unsupported value.
         """
@@ -533,7 +533,8 @@ class BSSNRHSs:
             dsmin = sp.Symbol("dsmin", real=True)
             C_YBS_mom = sp.Symbol("C_YBS_mom", real=True)
             CFL_FACTOR = sp.Symbol("CFL_FACTOR", real=True)
-            # The coefficient carries the conformal factor W = e^{-2 phi}, which is 1 far
+            # The coefficient carries W**POWER, with POWER=1 preserving the original
+            # adjustment. W = e^{-2 phi} is 1 far
             # from the holes and vanishes at a puncture. There the computed momentum
             # residual is dominated by discretization error, and second derivatives
             # of phi grow like 1/r^2. W attenuates the added term, but W times the
@@ -546,7 +547,8 @@ class BSSNRHSs:
                 W = sp.sqrt(cf)
             else:  # "phi"; unsupported values were rejected in Step 4.
                 W = sp.exp(-2 * cf)
-            ell_M = C_YBS_mom * CFL_FACTOR * dsmin * W
+            POWER = sp.Symbol("POWER", real=True)
+            ell_M = C_YBS_mom * CFL_FACTOR * dsmin * W**POWER
             for i in range(3):
                 for j in range(3):
                     Abar_rhsDD[i][j] += ell_M * self.DbarM_STFDD[i][j]
@@ -792,8 +794,26 @@ if __name__ == "__main__":
             enable_YBS_Gamma_constraint_adjustment=True,
             enable_YBS_momentum_constraint_adjustment=True,
         )
+        # The existing trusted results describe the historical POWER=1 equations.
+        # Preserve that regression check without changing the trusted values.
+        default_power = {sp.Symbol("POWER", real=True): sp.Integer(1)}
+        validation_dict = {
+            name: (
+                [
+                    item.xreplace(default_power) if isinstance(item, sp.Expr) else item
+                    for item in ve.flatten_tensor(value)
+                ]
+                if isinstance(value, list)
+                else (
+                    value.xreplace(default_power)
+                    if isinstance(value, sp.Expr)
+                    else value
+                )
+            )
+            for name, value in brhs.__dict__.items()
+        }
         results_dict = ve.process_dictionary_of_expressions(
-            brhs.__dict__, fixed_mpfs_for_free_symbols=True
+            validation_dict, fixed_mpfs_for_free_symbols=True
         )
         ve.compare_or_generate_trusted_results(
             os.path.abspath(__file__),

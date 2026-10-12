@@ -244,4 +244,40 @@
 
 #endif // ifdef/elif block to determine which style, if any, SIMD is applicable
 
+// General powers use libm per lane; common uniform powers retain vector
+// operations. Both arguments are vectors because generated CodeParameters are
+// broadcast.
+#include <math.h>
+static inline REAL_SIMD_ARRAY PowSIMD(const REAL_SIMD_ARRAY a,
+                                      const REAL_SIMD_ARRAY b) {
+  double exponents[SIMD_WIDTH];
+  WriteSIMD(exponents, b);
+  int uniform = 1;
+  for (int i = 1; i < SIMD_WIDTH; ++i)
+    if (exponents[i] != exponents[0])
+      uniform = 0;
+  if (uniform) {
+    const double p = exponents[0];
+    if (p == 0.0)
+      return ConstSIMD(1.0);
+    if (p == 0.5)
+      return SqrtSIMD(a);
+    if (p == 1.0)
+      return a;
+    if (p == 1.5)
+      return MulSIMD(a, SqrtSIMD(a));
+    if (p == 2.0)
+      return MulSIMD(a, a);
+    if (p == 2.5)
+      return MulSIMD(MulSIMD(a, a), SqrtSIMD(a));
+    if (p == 3.0)
+      return MulSIMD(MulSIMD(a, a), a);
+  }
+  double values[SIMD_WIDTH];
+  WriteSIMD(values, a);
+  for (int i = 0; i < SIMD_WIDTH; ++i)
+    values[i] = pow(values[i], exponents[i]);
+  return ReadSIMD(values);
+}
+
 #endif // __SIMD_INTRINSICS_H__

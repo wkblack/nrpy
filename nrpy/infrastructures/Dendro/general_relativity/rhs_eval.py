@@ -73,7 +73,7 @@ def register_CFunction_rhs_eval(
         term and register YBS_chi, whose default 0 disables it.
     :param enable_YBS_momentum_constraint_adjustment: Add Yo et al. momentum
         damping with coefficient C_YBS_mom times CFL_FACTOR times local spacing
-        times the conformal factor W, and register C_YBS_mom, whose default 0
+        times W**POWER (POWER defaults to 1), and register C_YBS_mom, whose default 0
         disables it and whose recommended value is 1.75.
     :param enable_SSL: Add slow-start lapse.
     :param enable_CAHD: Add formulation-specific Hamiltonian damping.
@@ -128,19 +128,21 @@ def register_CFunction_rhs_eval(
             par.register_CodeParameters(
                 "REAL",
                 __name__,
-                ["C_YBS_mom", "CFL_FACTOR"],
-                [0.0, 0.25],
+                ["C_YBS_mom", "CFL_FACTOR", "POWER"],
+                [0.0, 0.25, 1.0],
                 add_to_parfile=True,
                 descriptions=[
                     "1.75 = recommended; diffusive damping of momentum-constraint "
-                    "violations, weighted by the conformal factor W, which vanishes "
+                    "violations, weighted by W**POWER. At POWER=1, W vanishes "
                     "at punctures and attenuates the term there. Range: 0 (off) to "
                     "about 2 at CFL_FACTOR = 0.45 when W <= 1 everywhere. "
-                    "Stability needs C_YBS_mom * CFL_FACTOR^2 * lambda_FD * W * ds_min "
+                    "Stability needs C_YBS_mom * CFL_FACTOR^2 * lambda_FD * W**POWER * ds_min "
                     "/ dsmin below the Runge-Kutta real-axis limit (2.5 for RK3, 2.8 "
                     "for RK4), where ds_min is the smallest grid spacing and lambda_FD "
                     "= 5.6 to 7.6 for 4th to 8th order.",
                     "Evolution CFL factor.",
+                    "Nonnegative exponent in the momentum W**POWER prefactor; "
+                    "1 reproduces the original term, 0 removes W attenuation.",
                 ],
             )
 

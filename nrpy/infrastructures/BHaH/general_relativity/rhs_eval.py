@@ -201,6 +201,15 @@ def register_CFunction_rhs_eval(
                 "the smallest grid spacing and lambda_FD = 5.6 to 7.6 for 4th to 8th order."
             ),
         )
+        par.register_CodeParameter(
+            "REAL",
+            __name__,
+            "POWER",
+            1.0,
+            commondata=True,
+            add_to_parfile=True,
+            description="Exponent of W in the momentum adjustment; default 1.",
+        )
     if enable_fCCZ4:
         # The shared fCCZ4 expression factory is the single fCCZ4 expression
         # source for all infrastructures: it assembles the non-gauge fCCZ4
@@ -383,8 +392,15 @@ def register_CFunction_rhs_eval(
 
     # Perform validation of RHSs against trusted expressions.
     if validate_expressions:
+        # Existing trusted values cover the historical default POWER=1.
         return ve.process_dictionary_of_expressions(
-            local_RHSs_varname_to_expr_dict, fixed_mpfs_for_free_symbols=True
+            {
+                name: expression.xreplace(
+                    {sp.Symbol("POWER", real=True): sp.Integer(1)}
+                )
+                for name, expression in local_RHSs_varname_to_expr_dict.items()
+            },
+            fixed_mpfs_for_free_symbols=True,
         )
     # ve.compare_or_generate_trusted_results(
     #     os.path.abspath(__file__),

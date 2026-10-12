@@ -410,8 +410,15 @@ if __name__ == "__main__":
             enable_YBS_Gamma_constraint_adjustment=True,
             enable_YBS_momentum_constraint_adjustment=True,
         )
+        # Existing trusted values cover the historical default POWER=1.
         processed = ve.process_dictionary_of_expressions(
-            rhs.fCCZ4_RHSs_varname_to_expr_dict, fixed_mpfs_for_free_symbols=True
+            {
+                name: expression.xreplace(
+                    {sp.Symbol("POWER", real=True): sp.Integer(1)}
+                )
+                for name, expression in rhs.fCCZ4_RHSs_varname_to_expr_dict.items()
+            },
+            fixed_mpfs_for_free_symbols=True,
         )
         ve.compare_or_generate_trusted_results(
             os.path.abspath(__file__),
