@@ -292,11 +292,13 @@ class BSSNRHSs:
 
         if enable_YBS_Gamma_constraint_adjustment:
             YBS_chi = sp.Symbol("YBS_chi", real=True)
+            # Constant-rate damping of the same residual, independent of the
+            # sign of div(beta); units of inverse time (e.g. 0.1/M).
+            C_GAMMA_DAMP = sp.Symbol("C_GAMMA_DAMP", real=True)
             for i in range(3):
                 self.Lambdabar_rhsU[i] += (
-                    -YBS_chi
+                    -(YBS_chi * Dbarbetacontraction + C_GAMMA_DAMP)
                     * (LambdabarU[i] - DGammaU[i])
-                    * Dbarbetacontraction
                 )
 
         # Step 6.d: Term 4 of \partial_t \bar{\Lambda}^i:

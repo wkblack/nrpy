@@ -124,6 +124,18 @@ def register_CFunction_rhs_eval(
                     "values should not be used."
                 ),
             )
+            par.register_CodeParameter(
+                "REAL",
+                __name__,
+                "C_GAMMA_DAMP",
+                0.0,
+                add_to_parfile=True,
+                description=(
+                    "Constant-rate damping of the connection residual "
+                    "Lambdabar^i - DGamma^i, added to the YBS_chi*div(beta) rate; "
+                    "units of inverse time (0.1/M suggested). 0 = off."
+                ),
+            )
         if enable_YBS_momentum_constraint_adjustment:
             par.register_CodeParameters(
                 "REAL",
