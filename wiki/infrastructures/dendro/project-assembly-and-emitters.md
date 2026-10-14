@@ -26,7 +26,7 @@ After `do_parallel_codegen()`, each example calls
 EVOL names must equal the canonical state and the registered AUXEVOL names must
 be exactly the six Ricci scratch components. The merge of the parallel results is
 a last-writer `dict.update` of each task's registries, so a name that several
-tasks register, such as `C_CAHD` in the three order-specific RHS registrars, keeps
+tasks register, such as `CAHD_C` in the three order-specific RHS registrars, keeps
 the last definition. The CI helper generates each variant twice at
 `--fd-order 6` and requires byte-identical trees; no check covers other orders.
 Inexpensive emitters then write headers, parameter input, context, executable

@@ -21,7 +21,7 @@ the optional addition is
 
 \[
 \left.\partial_t\bar A_{ij}\right|_{\rm YBS\text{-}MOM}
-=C_{\rm YBS\_mom}\,\mathrm{CFL\_FACTOR}\,\Delta s_{\min}\,W
+=c_M\,\frac{\Delta s_{\min}}{\mathrm{CFL\_FACTOR}}\,W
 \left[
 \frac12(\bar D_i\mathcal M_j+\bar D_j\mathcal M_i)
 -\frac13\bar\gamma_{ij}\bar\gamma^{kl}\bar D_k\mathcal M_l
@@ -29,20 +29,23 @@ the optional addition is
 \qquad W=e^{-2\phi}.
 \]
 
-The coefficient follows the CAHD pattern: because
-`CFL_FACTOR * DSMINGF` is the local timestep scale, the parabolic coefficient
-shrinks with resolution. The explicit timestep limit of the diffusion term is
-therefore proportional to the spacing, like the hyperbolic CFL limit, rather
-than to its square. The conformal factor `W` also multiplies the coefficient;
-it is 1 far from black holes and vanishes at a puncture (see
+Here `c_M` is the runtime parameter `CAMD_C` (coarse-grid-adjusted momentum
+damping). The coefficient follows the CAHD pattern: `DSMINGF / CFL_FACTOR`
+equals `DSMINGF^2` divided by the local Courant time `CFL_FACTOR * DSMINGF`,
+so `ell_M * Delta t / h^2` does not depend on `CFL_FACTOR` and `CAMD_C` need
+not change when `CFL_FACTOR` does. The explicit timestep limit of the
+diffusion term is therefore proportional to the spacing, like the hyperbolic
+CFL limit, rather than to its square. The conformal factor `W` also multiplies
+the coefficient; it is 1 far from black holes and vanishes at a puncture (see
 [Conformal-factor weight](#conformal-factor-weight)). The recommended value of
-`C_YBS_mom` is 1.75, given with its range under
-[Strength and timestep bound](#strength-and-timestep-bound). This is
+`CAMD_C` is 0.0625, which equals the former `C_YBS_mom = 1` at
+`CFL_FACTOR = 0.25` through `CAMD_C = C_YBS_mom * CFL_FACTOR^2`; its range is
+given under [Strength and timestep bound](#strength-and-timestep-bound). This is
 timestep-scaled, `W`-weighted parabolic damping; it does not change the PDE
 into a hyperbolic relaxation system.
 
 Claim evidence:
-- Claim: enabled YBS-MOM is the displayed direct, matter-complete, covariant STF momentum-gradient addition with a CAHD-style local timestep prefactor and the conformal-factor weight `W`, so the explicit diffusion timestep limit scales with the spacing like the hyperbolic CFL limit; it adds no evolved cleaner field and makes no full-system hyperbolicity or stability guarantee.
+- Claim: enabled YBS-MOM is the displayed direct, matter-complete, covariant STF momentum-gradient addition with the CAHD-style prefactor `CAMD_C * dsmin / CFL_FACTOR` and the conformal-factor weight `W`, so the explicit diffusion timestep limit scales with the spacing like the hyperbolic CFL limit; it adds no evolved cleaner field and makes no full-system hyperbolicity or stability guarantee.
 - Role: public/scientific contract
 - Deciding authority: [BSSN_RHSs.py](../../../nrpy/equations/general_relativity/BSSN_RHSs.py), `BSSNRHSs.__init__` YBS momentum branch
 - Corroboration: [Yo, Lin, and Cao, arXiv:1205.5111v2](https://arxiv.org/pdf/1205.5111v2), Eq. (56); [Etienne, Phys. Rev. D 110, 064045](https://doi.org/10.1103/PhysRevD.110.064045), Eq. (26)
@@ -109,8 +112,8 @@ Claim evidence:
 projection, and the addition to `Abar_rhsDD`. Its matter branch differentiates
 the stress-energy contribution as well. `FCCZ4RHSs` reuses that adjusted BSSN
 base. `register_CFunction_rhs_eval` conditionally registers `DSMINGF` and the
-runtime `C_YBS_mom` parameter, whose default `0.0` removes the term exactly and
-whose recommended value is 1.75. Public APIs default the option to `False`.
+runtime `CAMD_C` parameter, whose default `0.0` removes the term exactly and
+whose recommended value is 0.0625. Public APIs default the option to `False`.
 The black-hole spectroscopy generator schedules the shared spacing fill when
 either CAHD or YBS-MOM needs it.
 
@@ -119,18 +122,18 @@ together.
 
 ### Strength and timestep bound
 
-`C_YBS_mom` is zero by default, which disables the term exactly. A user who
+`CAMD_C` is zero by default, which disables the term exactly. A user who
 enables the option sets it above zero in the parameter file; the recommended
-value 1.75 is a maintainer choice, not a derived stability bound. BHaH uses
+value 0.0625 is a maintainer choice, not a derived stability bound. BHaH uses
 `Delta t = CFL_FACTOR * ds_min` and
-`ell_M = C_YBS_mom * CFL_FACTOR * dsmin * W`. Here `ds_min` is the global
+`ell_M = CAMD_C * dsmin / CFL_FACTOR * W`. Here `ds_min` is the global
 minimum of the reference-metric spacing `dsmin`. Therefore, for the local
 reference spacing `h=dsmin`,
 
 ```text
 ell_M * Delta t / h^2
-  = C_YBS_mom * CFL_FACTOR^2 * W * ds_min / dsmin
-  <= C_YBS_mom * CFL_FACTOR^2 * W_max
+  = CAMD_C * W * ds_min / dsmin
+  <= CAMD_C * W_max
 ```
 
 for nonnegative coefficient and `W`, where `W_max` bounds `W` on the grid.
@@ -155,7 +158,7 @@ explicit RK real-axis limits are approximately 2.785 for RK4, 2.513 for RK3,
 and 2.0 for RK2. The model condition is
 
 ```text
-C_YBS_mom * CFL_FACTOR^2 * lambda_FD * W * ds_min / dsmin
+CAMD_C * lambda_FD * W * ds_min / dsmin
   <= RK real-axis limit.
 ```
 
@@ -167,18 +170,20 @@ evolution. For example, the constant determinant-one conformal metric
 value `4*ell_M/h^2`. Reference-metric spacing does not bound this additional
 inverse-conformal-metric factor.
 
-Within the identity-metric model, `CFL_FACTOR=0.45` and `W<=1` give diffusion
-limits on `C_YBS_mom` of about 2.2 for order 4 and 1.6 for order 8 with RK3.
-For `W_max>1`, divide these estimates by `W_max`; the estimates scale as
-`1/CFL_FACTOR^2`. A value near 2 is therefore an order-dependent estimate,
-not a generally safe upper limit.
+Within the identity-metric model, `W<=1` gives diffusion limits on `CAMD_C`
+of about 0.45 for order 4 and 0.33 for order 8 with RK3, and about 0.41 for
+order 6 with RK4, independent of `CFL_FACTOR`. For `W_max>1`, divide these
+estimates by `W_max`. They are order-dependent estimates, not generally safe
+upper limits. Bounding the discrete operator by the full Laplacian symbol
+instead, `CAMD_C < 3 r_RK / (2 mu_max)`, gives the smaller RK4 values 0.230
+(order 6) and 0.214 (order 8) quoted in the parameter description.
 
 For orders 4, 6, and 8 the diffusive eigenvalue peaks near `0.75*pi` per cell
 in each direction; for order 2 it reaches its maximum when two directions
 have wavenumber `pi` and the third is arbitrary. Adding the discrete
 unit-speed wave frequency to every diffusive mode gives a further model
 estimate. At `CFL_FACTOR=0.45`, its RK4 limits on
-`C_YBS_mom*CFL_FACTOR^2*lambda_FD` are approximately 2.77, 2.70, 2.63, and
+`CAMD_C*lambda_FD` are approximately 2.77, 2.70, 2.63, and
 2.56 for orders 2, 4, 6, and 8, while RK3 gives 2.44, 2.20, 2.06, and 1.96.
 These are limits for that imposed frequency model, not eigenvalues or
 stability bounds of the full coupled BSSN/fCCZ4 and gauge system.
@@ -189,7 +194,7 @@ gauge speeds, Kreiss-Oliger dissipation, and lower-order terms involving
 factor. Its near-puncture weight does not bound every omitted term.
 
 Claim evidence:
-- Claim: The default YBS-MOM coefficient is zero and 1.75 is a maintainer recommendation. The quoted FD and RK limits apply to an isolated frozen Fourier model with identity conformal metric and equal Cartesian spacing; neither the reference-spacing estimate nor the added unit-speed frequency model proves full-system or general cellwise stability.
+- Claim: The default YBS-MOM coefficient `CAMD_C` is zero and 0.0625 is a maintainer recommendation. The quoted FD and RK limits apply to an isolated frozen Fourier model with identity conformal metric and equal Cartesian spacing; neither the reference-spacing estimate nor the added unit-speed frequency model proves full-system or general cellwise stability.
 - Role: descriptive behavior
 - Deciding authority: [BSSN_RHSs.py](../../../nrpy/equations/general_relativity/BSSN_RHSs.py), `BSSNRHSs.__init__`, `DbarM_STFDD` and `ell_M`; [finite_difference.py](../../../nrpy/finite_difference.py), `compute_fdcoeffs_fdstencl`; [rk_butcher_table_dictionary.py](../../../nrpy/infrastructures/BHaH/MoLtimestepping/rk_butcher_table_dictionary.py), `generate_Butcher_tables`; [rhs_eval.py](../../../nrpy/infrastructures/BHaH/general_relativity/rhs_eval.py), coefficient default and description; [numerical_grids_and_timestep.py](../../../nrpy/infrastructures/BHaH/numerical_grids_and_timestep.py), `ds_min_single_pt_exprs` and `register_CFunction_cfl_limited_timestep`
 - Corroboration: [Yo, Lin, and Cao, arXiv:1205.5111v2](https://arxiv.org/pdf/1205.5111v2), Eq. (56), for the continuum operator only; the finite-difference symbols and RK polynomials define the numerical estimates, not a general stability theorem.
@@ -208,7 +213,7 @@ coefficient by `W`; it leaves the direct, stateless formulation unchanged.
 The Dendro examples expose this term with `--ybs-momentum`, independently of
 `--ybs-gamma`. Dendro computes `dsmin` once per Cartesian block as
 `min(abs(dx), abs(dy), abs(dz))`; it broadcasts the scalar in SIMD kernels.
-The generated RHS uses `C_YBS_mom * BSSN_CFL_FACTOR * dsmin * W`, with the same
+The generated RHS uses `CAMD_C * dsmin / BSSN_CFL_FACTOR * W`, with the same
 CFL factor used for evolution and `W` built from the evolved conformal factor
 (`W` or `chi`). No spacing gridfunction is needed on a block
 with uniform Cartesian spacing. See [BSSN Application Wiring](../../infrastructures/dendro/bssn-application-wiring.md#optional-yo-et-al-adjustments)

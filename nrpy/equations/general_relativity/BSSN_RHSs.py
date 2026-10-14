@@ -45,7 +45,7 @@ class BSSNRHSs:
         :param enable_YBS_Gamma_constraint_adjustment: Whether to enable the YBS Gamma-constraint adjustment.
         :param enable_YBS_momentum_constraint_adjustment: Whether to enable the
             Yo--Lin--Cao momentum-constraint adjustment, whose coefficient
-            C_YBS_mom * CFL_FACTOR * dsmin is multiplied by the conformal factor W.
+            CAMD_C * dsmin / CFL_FACTOR is multiplied by the conformal factor W.
 
         :raises ValueError: If EvolvedConformalFactor_cf parameter is set to an unsupported value.
         """
@@ -531,7 +531,7 @@ class BSSNRHSs:
                     )
 
             dsmin = sp.Symbol("dsmin", real=True)
-            C_YBS_mom = sp.Symbol("C_YBS_mom", real=True)
+            CAMD_C = sp.Symbol("CAMD_C", real=True)
             CFL_FACTOR = sp.Symbol("CFL_FACTOR", real=True)
             # The coefficient carries the conformal factor W = e^{-2 phi}, which is 1 far
             # from the holes and vanishes at a puncture. There the computed momentum
@@ -546,7 +546,9 @@ class BSSNRHSs:
                 W = sp.sqrt(cf)
             else:  # "phi"; unsupported values were rejected in Step 4.
                 W = sp.exp(-2 * cf)
-            ell_M = C_YBS_mom * CFL_FACTOR * dsmin * W
+            # dsmin / CFL_FACTOR is the grid spacing squared over the local Courant
+            # time CFL_FACTOR * dsmin, so CAMD_C need not change when CFL_FACTOR does.
+            ell_M = CAMD_C * dsmin / CFL_FACTOR * W
             for i in range(3):
                 for j in range(3):
                     Abar_rhsDD[i][j] += ell_M * self.DbarM_STFDD[i][j]

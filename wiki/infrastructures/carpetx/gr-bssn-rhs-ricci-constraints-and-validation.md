@@ -81,14 +81,16 @@ RHS parameter metadata is passed through `ET_current_thorn_CodeParams_used`.
 The list always includes `eta` and `fd_order`; it includes either
 `diss_strength_gauge` plus `diss_strength_nongauge` when `enable_CAKO` is true,
 or `diss_strength` otherwise. It adds `SSL_h` and `SSL_sigma` only when
-`enable_SSL` is true, adds `C_CAHD` and
+`enable_SSL` is true, adds `CAHD_C` and
 `CFL_FACTOR__ignore_repeats_Carpet_timeref_factors` only when `enable_CAHD` is
 true, and adds `PI` for the `Baikal` thorn path.
 
-Two emitted-code caveats are source-observed and not interpreted here as fixes.
-The CAHD body templates currently leave an empty operand in the SIMD
-`MulSIMD(C_CAHD, MulSIMD(,))` path and in the scalar `C_CAHD * ;` path. The SSL
-SIMD body constructs `noSIMD_SSL_Gaussian_prefactor` as a scalar value and then
+The CAHD body templates compute `dsmin` as the smallest `CCTK_DELTA_SPACE`
+component and `cahdprefactor = CAHD_C * dsmin / CFL_FACTOR`, in both the SIMD
+and scalar paths; `CAHD_C` and
+`CFL_FACTOR__ignore_repeats_Carpet_timeref_factors` are registered together.
+One emitted-code caveat is source-observed and not interpreted here as a fix.
+The SSL SIMD body constructs `noSIMD_SSL_Gaussian_prefactor` as a scalar value and then
 passes `*noSIMD_SSL_Gaussian_prefactor` to `ConstSIMD()`.
 
 `register_CFunction_BSSN_constraints()` selects `BSSN_constraints` with optional

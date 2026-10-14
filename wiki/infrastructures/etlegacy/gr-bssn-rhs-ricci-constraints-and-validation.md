@@ -66,9 +66,9 @@ dissipation adds `_dKOD` derivative terms to gauge and non-gauge RHSs; CAKO
 uses separate gauge and non-gauge strength parameters multiplied by the
 conformal-factor-derived `W`, while the non-CAKO path uses the shared
 `diss_strength` parameter name. CAHD builds the matching `BSSN_constraints`
-object, registers `C_CAHD` and
-`CFL_FACTOR__ignore_repeats_Carpet_timeref_factors`, computes a `dsmin`
-prefactor, and adds a conformal-factor-adjusted Hamiltonian-damping term to
+object, registers `CAHD_C` and
+`CFL_FACTOR__ignore_repeats_Carpet_timeref_factors`, computes the prefactor
+`CAHD_C * dsmin / CFL_FACTOR`, and adds a conformal-factor-adjusted Hamiltonian-damping term to
 `cf_rhs`. SSL registers `SSL_h` and `SSL_sigma`, computes a time-dependent
 Gaussian prefactor, and modifies `alpha_rhs`.
 

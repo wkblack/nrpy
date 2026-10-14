@@ -99,10 +99,10 @@ run then aborts with the generic `checkpoint restore failed` message:
 - The stored formulation, field count and names, and parameter-name list equal
   the generated solver's.
 - Every emitted `CodeParameter` equals its stored value exactly. For BSSN these
-  are `C_CAHD`, both Kreiss-Oliger strengths (file key `KO_DISS_SIGMA`), `SSL_h`,
-  `SSL_sigma`, `chi_floor`, and `eta`, plus `CFL_FACTOR`, `YBS_chi`, and
-  `C_YBS_mom` when generated, and `kappa1` and `kappa2` for fCCZ4. Changing
-  `ETA_CONST`, `KO_DISS_SIGMA`, `BSSN_CAHD_C`, `BSSN_SSL_H`, `BSSN_SSL_SIGMA`, or
+  are `CAHD_C`, `CFL_FACTOR`, both Kreiss-Oliger strengths (file key
+  `KO_DISS_SIGMA`), `SSL_h`, `SSL_sigma`, `chi_floor`, and `eta`, plus `YBS_chi`
+  and `CAMD_C` when generated, and `kappa1` and `kappa2` for fCCZ4. Changing
+  `ETA_CONST`, `KO_DISS_SIGMA`, `CAHD_C`, `BSSN_SSL_H`, `BSSN_SSL_SIGMA`, or
   `CHI_FLOOR` in the restart file is therefore rejected.
 - The stored domain bounds equal the current bounds.
 - The stored time and time step are finite and the time step is positive, the

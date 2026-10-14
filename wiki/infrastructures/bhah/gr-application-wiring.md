@@ -67,8 +67,9 @@ Claim evidence:
 The separate `enable_YBS_momentum_constraint_adjustment` option controls the
 default-disabled timestep-scaled, `W`-weighted momentum adjustment for either
 formulation. When enabled, the registrar adds the shared raw-spacing `DSMINGF`
-auxiliary gridfunction and runtime `C_YBS_mom` parameter (default 0, which
-disables the term; recommended 1.75). The selected equation owner
+auxiliary gridfunction and runtime `CAMD_C` parameter (default 0, which
+disables the term; recommended 0.0625). CAHD multiplies `H` by
+`CAHD_C * dsmin / CFL_FACTOR` (default `CAHD_C = 0.015`). The selected equation owner
 changes existing `a_rhsDD` outputs; no evolved cleaner state, cleaner RHS,
 initial-data path, boundary path, or KO route is added.
 `blackhole_spectroscopy.py` keeps a false source constant, forwards it only to
@@ -78,7 +79,7 @@ its RHS coefficient. The continuum equations and validation limits remain
 owned by [YBS-MOM Timestep-Scaled Momentum Adjustment](../../equations/general-relativity/ybs-momentum-damping.md).
 
 Claim evidence:
-- Claim: `register_CFunction_rhs_eval` exposes an independent default-false YBS-MOM option for BSSN or fCCZ4, conditionally owns shared raw `DSMINGF` and `C_YBS_mom` (default 0), changes existing `a_rhsDD` expressions without new evolved state, and shares one local-spacing helper with CAHD in the black-hole spectroscopy example.
+- Claim: `register_CFunction_rhs_eval` exposes an independent default-false YBS-MOM option for BSSN or fCCZ4, conditionally owns shared raw `DSMINGF` and `CAMD_C` (default 0), changes existing `a_rhsDD` expressions without new evolved state, and shares one local-spacing helper with CAHD in the black-hole spectroscopy example.
 - Role: descriptive behavior
 - Deciding authority: [rhs_eval.py](../../../nrpy/infrastructures/BHaH/general_relativity/rhs_eval.py), `register_CFunction_rhs_eval`
 - Corroboration: [dsmin_gf.py](../../../nrpy/infrastructures/BHaH/general_relativity/dsmin_gf.py), `register_CFunction_dsmin_auxevol_gridfunction`; [blackhole_spectroscopy.py](../../../nrpy/examples/blackhole_spectroscopy.py), shared CAHD/YBS-MOM registration and scheduling gate; [representative BHaH rhs_eval trusted output](../../../nrpy/infrastructures/BHaH/general_relativity/tests/rhs_eval_OnePlusLog_GammaDriving2ndOrder_Covariant_SinhSpherical_RbargfsFalse_T4munuFalse_ImprovementsFalse.py), `trusted_dict`

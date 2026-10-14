@@ -70,7 +70,7 @@ def register_CFunction_rhs_eval(
     :param KreissOliger_strength_gauge: Gauge strength for Kreiss-Oliger dissipation.
     :param KreissOliger_strength_nongauge: Non-gauge strength for Kreiss-Oliger dissipation.
     :param enable_CAKO: Whether to enable curvature-aware Kreiss-Oliger dissipation (multiply strength by W).
-    :param enable_CAHD: Whether to enable curvature-aware Hamiltonian-constraint damping.
+    :param enable_CAHD: Whether to enable coarse-grid-adjusted Hamiltonian-constraint damping.
     :param enable_SSL: Whether to enable slow-start lapse.
     :param validate_expressions: Whether to validate generated sympy expressions against trusted values.
     :param return_validation_dict: Whether to return dictionary of symbolic expressions for validation against trusted values.
@@ -295,16 +295,16 @@ def register_CFunction_rhs_eval(
             + ("_RbarDD_gridfunctions" if enable_RbarDD_gridfunctions else "")
             + ("_T4munu" if enable_T4munu else "")
         ]
-        _C_CAHD, _CFL_FACTOR__ignore_repeats_Carpet_timeref_factors = (
+        _CAHD_C, _CFL_FACTOR__ignore_repeats_Carpet_timeref_factors = (
             par.register_CodeParameters(
                 "REAL",
                 __name__,
                 [
-                    "C_CAHD",
+                    "CAHD_C",
                     "CFL_FACTOR__ignore_repeats_Carpet_timeref_factors",
                 ],
                 [
-                    0.15,
+                    0.015,
                     0.5,
                 ],
                 commondata=True,
@@ -315,30 +315,28 @@ def register_CFunction_rhs_eval(
 #ifndef NRPYMIN
 #define NRPYMIN(A, B) ( ((A) < (B)) ? (A) : (B) )
 #endif
-  // cahdprefactor = C_CAHD * sp.symbols("CFL_FACTOR") * sp.symbols("dsmin")
-  // Original prescription: -dt * (orig_C_H * dsmin / dt * CFL_FACTOR__ignore_repeats_Carpet_timeref_factors) * H / 4
-  // New prescription: cancel the dt's, set orig_C_H/4 = C_CAHD ->
-  // -C_CAHD * dsmin * CFL_FACTOR__ignore_repeats_Carpet_timeref_factors) * H ,
-  // where CFL_FACTOR is most typically 0.45 or 0.5, and C_CAHD = 0.15 = orig_C_H / 4 = 0.6 / 4
-  // Thus, New & Original prescriptions are the same, just with some redefinitions.
+  // cahdprefactor = CAHD_C * dsmin / CFL_FACTOR: d_t phi -= cahdprefactor * H.
+  // dsmin / CFL_FACTOR is dsmin^2 over the local Courant time CFL_FACTOR * dsmin,
+  // so CAHD_C need not change with CFL_FACTOR. The former CAHD coefficient
+  // C_CAHD * CFL_FACTOR * dsmin corresponds to CAHD_C = C_CAHD * CFL_FACTOR^2.
   const CCTK_REAL dsmin CCTK_ATTRIBUTE_UNUSED = NRPYMIN(CCTK_DELTA_SPACE(0),NRPYMIN(CCTK_DELTA_SPACE(1),CCTK_DELTA_SPACE(2)));
 """
         if enable_simd:
             body += f"""
   const CCTK_REAL *param_CFL_FACTOR__ignore_repeats_Carpet_timeref_factors =
   CCTK_ParameterGet("CFL_FACTOR__ignore_repeats_Carpet_timeref_factors", "{thorn_name}", NULL);
-  const CCTK_REAL *param_C_CAHD CCTK_ATTRIBUTE_UNUSED = CCTK_ParameterGet("C_CAHD", "{thorn_name}", NULL);
-  const CCTK_REAL cahdprefactor_NOSIMD = (*param_C_CAHD) * (*param_CFL_FACTOR__ignore_repeats_Carpet_timeref_factors) * dsmin;
+  const CCTK_REAL *param_CAHD_C CCTK_ATTRIBUTE_UNUSED = CCTK_ParameterGet("CAHD_C", "{thorn_name}", NULL);
+  const CCTK_REAL cahdprefactor_NOSIMD = (*param_CAHD_C) * dsmin / (*param_CFL_FACTOR__ignore_repeats_Carpet_timeref_factors);
   const REAL_SIMD_ARRAY cahdprefactor CCTK_ATTRIBUTE_UNUSED = ConstSIMD(cahdprefactor_NOSIMD);
 """
         else:
             body += """
-  const CCTK_REAL cahdprefactor CCTK_ATTRIBUTE_UNUSED = C_CAHD * CFL_FACTOR__ignore_repeats_Carpet_timeref_factors * dsmin;
+  const CCTK_REAL cahdprefactor CCTK_ATTRIBUTE_UNUSED = CAHD_C * dsmin / CFL_FACTOR__ignore_repeats_Carpet_timeref_factors;
 """
 
         # Initialize CAHD_term assuming phi is the evolved conformal factor. CFL_FACTOR is defined in MoL.
-        # CAHD_term = -C_CAHD * (sp.symbols("CFL_FACTOR") * sp.symbols("dsmin")) * Bcon.H
-        # -> cahdprefactor = C_CAHD * sp.symbols("CFL_FACTOR") * sp.symbols("dsmin")
+        # CAHD_term = -CAHD_C * (dsmin / CFL_FACTOR) * Bcon.H
+        # -> cahdprefactor = CAHD_C * dsmin / CFL_FACTOR
         CAHD_term = -1 * sp.symbols("cahdprefactor") * Bcon.H
         if EvolvedConformalFactor_cf == "phi":
             pass  # CAHD_term already assumes phi is the evolved conformal factor.
@@ -471,7 +469,7 @@ if(fd_order == {fd_order}) {{
         params += ["SSL_h", "SSL_sigma"]
     if enable_CAHD:
         params += [
-            "C_CAHD",
+            "CAHD_C",
             "CFL_FACTOR__ignore_repeats_Carpet_timeref_factors",
         ]
     params += param_symbols

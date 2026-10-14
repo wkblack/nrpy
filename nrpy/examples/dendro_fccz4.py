@@ -114,10 +114,10 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help=(
             "add momentum-gradient damping (default: off); "
-            "its runtime strength C_YBS_mom defaults to 0, which disables it "
-            "(recommended 1.75); "
+            "its runtime strength CAMD_C defaults to 0, which disables it "
+            "(recommended 0.0625); "
             "Yo, Lin and Cao, arXiv:1205.5111, Eq. (56), "
-            "with a local CFL-times-spacing coefficient weighted by the conformal factor W"
+            "with a local spacing-over-CFL coefficient weighted by the conformal factor W"
         ),
     )
     return parser.parse_args()

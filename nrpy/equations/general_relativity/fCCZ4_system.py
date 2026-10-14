@@ -99,7 +99,7 @@ def build_fccz4_expression_bundle(
     :param KreissOliger_strength_gauge: KO strength for gauge fields.
     :param KreissOliger_strength_nongauge: KO strength for geometry/Z4 fields.
     :param enable_CAKO: Multiply KO strengths by the conformal factor W.
-    :param enable_CAHD: Enable curvature-aware Hamiltonian-constraint damping.
+    :param enable_CAHD: Enable coarse-grid-adjusted Hamiltonian-constraint damping.
     :param enable_SSL: Enable slow-start lapse.
     :param enable_YBS_Gamma_constraint_adjustment: Enable the YBS
         connection-constraint adjustment.
@@ -244,7 +244,7 @@ def build_fccz4_expression_bundle(
             include_Theta_fCCZ4=True,
         )
 
-    # Step 4.c: Add the curvature-aware Hamiltonian-constraint damping.
+    # Step 4.c: Add the coarse-grid-adjusted Hamiltonian-constraint damping.
     if enable_CAHD:
         Bcon = BSSN_constraints[
             CoordSystem
@@ -252,15 +252,27 @@ def build_fccz4_expression_bundle(
             + ("_RbarDD_gridfunctions" if enable_RbarDD_gridfunctions else "")
             + ("_T4munu" if enable_T4munu else "")
         ]
-        C_CAHD = par.register_CodeParameter(
-            "REAL", __name__, "C_CAHD", 0.15, commondata=True, add_to_parfile=True
+        CAHD_C = par.register_CodeParameter(
+            "REAL",
+            __name__,
+            "CAHD_C",
+            0.015,
+            commondata=True,
+            add_to_parfile=True,
+            description=(
+                "0.015 = default; coarse-grid-adjusted Hamiltonian damping strength c_H in "
+                "d_t phi -= c_H (dsmin / CFL_FACTOR) H. RK4 stability needs "
+                "c_H < r_RK / (8 mu_max): about 0.0192 for FD6 and 0.0179 for FD8."
+            ),
         )
         # Initialize CAHD_term assuming phi is the evolved conformal factor.
         # CFL_FACTOR is defined in MoL; dsmin stores raw physical grid spacing.
+        # dsmin / CFL_FACTOR = dsmin^2 / (CFL_FACTOR * dsmin), the grid spacing
+        # squared over the local Courant time, so CAHD_C need not change with CFL_FACTOR.
         CAHD_term = (
-            -C_CAHD
-            * sp.Symbol("CFL_FACTOR", real=True)
+            -CAHD_C
             * sp.Symbol("dsmin", real=True)
+            / sp.Symbol("CFL_FACTOR", real=True)
             * Bcon.H
         )
         if EvolvedConformalFactor_cf == "phi":

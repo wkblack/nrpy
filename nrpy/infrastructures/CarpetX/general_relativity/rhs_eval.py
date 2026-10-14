@@ -65,7 +65,7 @@ def register_CFunction_rhs_eval(
     :param KreissOliger_strength_gauge: Gauge strength for Kreiss-Oliger dissipation.
     :param KreissOliger_strength_nongauge: Non-gauge strength for Kreiss-Oliger dissipation.
     :param enable_CAKO: Whether to enable curvature-aware Kreiss-Oliger dissipation (multiply strength by W).
-    :param enable_CAHD: Whether to enable curvature-aware Hamiltonian-constraint damping.
+    :param enable_CAHD: Whether to enable coarse-grid-adjusted Hamiltonian-constraint damping.
     :param enable_SSL: Whether to enable slow-start lapse.
     :param validate_expressions: Whether to validate generated sympy expressions against trusted values.
 
@@ -113,10 +113,13 @@ def register_CFunction_rhs_eval(
 """
         if enable_CAHD:
             body += f"""
-  const CCTK_REAL *param_C_CAHD CCTK_ATTRIBUTE_UNUSED = CCTK_ParameterGet("C_CAHD", "{thorn_name}", NULL);
-  const REAL_SIMD_ARRAY C_CAHD CCTK_ATTRIBUTE_UNUSED = ConstSIMD(*param_C_CAHD);
-  // cahdprefactor = C_CAHD * sp.symbols("CFL_FACTOR") * sp.symbols("dsmin")
-  const REAL_SIMD_ARRAY cahdprefactor CCTK_ATTRIBUTE_UNUSED = MulSIMD(C_CAHD, MulSIMD(,));
+  // cahdprefactor = CAHD_C * dsmin / CFL_FACTOR: d_t phi -= cahdprefactor * H.
+  const CCTK_REAL dsmin CCTK_ATTRIBUTE_UNUSED = fmin(CCTK_DELTA_SPACE(0), fmin(CCTK_DELTA_SPACE(1), CCTK_DELTA_SPACE(2)));
+  const CCTK_REAL *param_CAHD_C CCTK_ATTRIBUTE_UNUSED = CCTK_ParameterGet("CAHD_C", "{thorn_name}", NULL);
+  const CCTK_REAL *param_CFL_FACTOR__ignore_repeats_Carpet_timeref_factors CCTK_ATTRIBUTE_UNUSED =
+    CCTK_ParameterGet("CFL_FACTOR__ignore_repeats_Carpet_timeref_factors", "{thorn_name}", NULL);
+  const REAL_SIMD_ARRAY cahdprefactor CCTK_ATTRIBUTE_UNUSED =
+    ConstSIMD((*param_CAHD_C) * dsmin / (*param_CFL_FACTOR__ignore_repeats_Carpet_timeref_factors));
 """
         if enable_SSL:
             body += f"""
@@ -136,8 +139,9 @@ def register_CFunction_rhs_eval(
 """
         if enable_CAHD:
             body += """
-  // cahdprefactor = C_CAHD * sp.symbols("CFL_FACTOR") * sp.symbols("dsmin")
-  const CCTK_REAL cahdprefactor = C_CAHD * ;
+  // cahdprefactor = CAHD_C * dsmin / CFL_FACTOR: d_t phi -= cahdprefactor * H.
+  const CCTK_REAL dsmin CCTK_ATTRIBUTE_UNUSED = fmin(CCTK_DELTA_SPACE(0), fmin(CCTK_DELTA_SPACE(1), CCTK_DELTA_SPACE(2)));
+  const CCTK_REAL cahdprefactor CCTK_ATTRIBUTE_UNUSED = CAHD_C * dsmin / CFL_FACTOR__ignore_repeats_Carpet_timeref_factors;
 """
         if enable_SSL:
             body += """
@@ -259,12 +263,25 @@ def register_CFunction_rhs_eval(
             + ("_RbarDD_gridfunctions" if enable_RbarDD_gridfunctions else "")
             + ("_T4munu" if enable_T4munu else "")
         ]
-        _C_CAHD = par.register_CodeParameter(
-            "REAL", __name__, "C_CAHD", 0.15, commondata=True, add_to_parfile=True
+        _CAHD_C, _CFL_FACTOR__ignore_repeats_Carpet_timeref_factors = (
+            par.register_CodeParameters(
+                "REAL",
+                __name__,
+                [
+                    "CAHD_C",
+                    "CFL_FACTOR__ignore_repeats_Carpet_timeref_factors",
+                ],
+                [
+                    0.015,
+                    0.5,
+                ],
+                commondata=True,
+                add_to_parfile=True,
+            )
         )
         # Initialize CAHD_term assuming phi is the evolved conformal factor. CFL_FACTOR is defined in MoL.
-        # CAHD_term = -C_CAHD * (sp.symbols("CFL_FACTOR") * sp.symbols("dsmin")) * Bcon.H
-        # -> cahdprefactor = C_CAHD * sp.symbols("CFL_FACTOR") * sp.symbols("dsmin")
+        # CAHD_term = -CAHD_C * (dsmin / CFL_FACTOR) * Bcon.H
+        # -> cahdprefactor = CAHD_C * dsmin / CFL_FACTOR
         CAHD_term = -1 * sp.symbols("cahdprefactor") * Bcon.H
         if EvolvedConformalFactor_cf == "phi":
             pass  # CAHD_term already assumes phi is the evolved conformal factor.
@@ -373,7 +390,7 @@ if(fd_order == {fd_order}) {{
         params += ["SSL_h", "SSL_sigma"]
     if enable_CAHD:
         params += [
-            "C_CAHD",
+            "CAHD_C",
             "CFL_FACTOR__ignore_repeats_Carpet_timeref_factors",
         ]
     if thorn_name == "Baikal":

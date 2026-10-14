@@ -82,16 +82,16 @@ def register_CFunction_rhs_eval(
     :param KreissOliger_strength_gauge: Gauge strength for Kreiss-Oliger dissipation.
     :param KreissOliger_strength_nongauge: Non-gauge strength for Kreiss-Oliger dissipation.
     :param enable_CAKO: Whether to enable curvature-aware Kreiss-Oliger dissipation (multiply strength by W).
-    :param enable_CAHD: Whether to enable curvature-aware Hamiltonian-constraint damping.
+    :param enable_CAHD: Whether to enable coarse-grid-adjusted Hamiltonian-constraint damping.
     :param enable_SSL: Whether to enable slow-start lapse.
     :param OMP_collapse: Degree of OpenMP loop collapsing.
     :param validate_expressions: Whether to validate generated sympy expressions against trusted values.
     :param enable_fCCZ4: Use fCCZ4 instead of BSSN evolution equations.
     :param enable_YBS_Gamma_constraint_adjustment: Enable the YBS connection-constraint
         adjustment and register the runtime parameter YBS_chi, whose default 0 disables it.
-    :param enable_YBS_momentum_constraint_adjustment: Enable the timestep-scaled,
-        W-weighted Yo--Lin--Cao momentum-constraint adjustment and register the runtime
-        parameter C_YBS_mom, whose default 0 disables it and whose recommended value is 1.75.
+    :param enable_YBS_momentum_constraint_adjustment: Enable the W-weighted
+        Yo--Lin--Cao momentum-constraint adjustment (CAMD) and register the runtime
+        parameter CAMD_C, whose default 0 disables it and whose recommended value is 0.0625.
     :param enable_cfdD_alphadD_vetUdD_gridfunctions: Whether to read the first derivatives of
         cf, alpha and vetU from the gridfunctions cfdD_alphadD_vetUdD_eval stores, and to
         build each mixed second derivative of them as a single first derivative of those
@@ -187,18 +187,16 @@ def register_CFunction_rhs_eval(
         par.register_CodeParameter(
             "REAL",
             __name__,
-            "C_YBS_mom",
+            "CAMD_C",
             0.0,
             commondata=True,
             add_to_parfile=True,
             description=(
-                "1.75 = recommended; diffusive damping of momentum-constraint "
-                "violations, weighted by the conformal factor W, which vanishes at "
-                "punctures and attenuates the term there. Range: 0 (off) to about 2 "
-                "at CFL_FACTOR = 0.45 when W <= 1 everywhere. "
-                "Stability needs C_YBS_mom * CFL_FACTOR^2 * lambda_FD * W * ds_min / dsmin "
-                "below the Runge-Kutta real-axis limit (2.5 for RK3), where ds_min is "
-                "the smallest grid spacing and lambda_FD = 5.6 to 7.6 for 4th to 8th order."
+                "0.0625 = recommended (C_YBS_mom = 1 at CFL_FACTOR = 0.25); coarse-grid-adjusted "
+                "momentum damping strength c_M in d_t Abar_ij += c_M W (dsmin / CFL_FACTOR) "
+                "[Dbar_(i M_j)]^TF. The conformal factor W vanishes at punctures and attenuates "
+                "the term there. Range: 0 (off) to below the RK4 parabolic estimate "
+                "c_M < 3 r_RK / (2 mu_max): about 0.230 for FD6 and 0.214 for FD8."
             ),
         )
     if enable_fCCZ4:
@@ -310,15 +308,27 @@ def register_CFunction_rhs_eval(
                 + ("_RbarDD_gridfunctions" if enable_RbarDD_gridfunctions else "")
                 + ("_T4munu" if enable_T4munu else "")
             ]
-            C_CAHD = par.register_CodeParameter(
-                "REAL", __name__, "C_CAHD", 0.15, commondata=True, add_to_parfile=True
+            CAHD_C = par.register_CodeParameter(
+                "REAL",
+                __name__,
+                "CAHD_C",
+                0.015,
+                commondata=True,
+                add_to_parfile=True,
+                description=(
+                    "0.015 = default; coarse-grid-adjusted Hamiltonian damping strength c_H in "
+                    "d_t phi -= c_H (dsmin / CFL_FACTOR) H. RK4 stability needs "
+                    "c_H < r_RK / (8 mu_max): about 0.0192 for FD6 and 0.0179 for FD8."
+                ),
             )
             # Initialize CAHD_term assuming phi is the evolved conformal factor.
             # CFL_FACTOR is defined in MoL; dsmin stores raw physical grid spacing.
+            # dsmin / CFL_FACTOR = dsmin^2 / (CFL_FACTOR * dsmin), the grid spacing
+            # squared over the local Courant time, so CAHD_C need not change with CFL_FACTOR.
             CAHD_term = (
-                -C_CAHD
-                * sp.Symbol("CFL_FACTOR", real=True)
+                -CAHD_C
                 * sp.Symbol("dsmin", real=True)
+                / sp.Symbol("CFL_FACTOR", real=True)
                 * Bcon.H
             )
             if EvolvedConformalFactor_cf == "phi":
