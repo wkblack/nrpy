@@ -135,7 +135,7 @@ timestep scale. Current code therefore adds no evolved field and leaves
 initial data, restart, boundary, AMR, and dissipation state routes unchanged.
 
 Claim evidence:
-- Claim: Current YBS-MOM uses the direct covariant STF gradient of the matter-complete lower momentum residual, multiplied by `C_YBS_mom*CFL_FACTOR*DSMINGF*W`, where the weight `W` is a later maintainer decision; the frozen auxiliary-relaxation proposal is superseded and no cleaner state is permitted.
+- Claim: Current YBS-MOM uses the direct covariant STF gradient of the matter-complete lower momentum residual, multiplied by `CAMD_C*DSMINGF/CFL_FACTOR*W`, where the weight `W` is a later maintainer decision; the frozen auxiliary-relaxation proposal is superseded and no cleaner state is permitted.
 - Role: public/scientific contract
 - Deciding authority: commissioned user clarification composed with [`BSSN_RHSs.py`](../nrpy/equations/general_relativity/BSSN_RHSs.py), `BSSNRHSs.__init__` YBS momentum branch
 - Corroboration: [Yo, Lin, and Cao, arXiv:1205.5111v2](https://arxiv.org/pdf/1205.5111v2), Eq. (56), and [Etienne, Phys. Rev. D 110, 064045](https://doi.org/10.1103/PhysRevD.110.064045), Eq. (26)

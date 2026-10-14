@@ -152,16 +152,17 @@ to 0.4. The solver binds each coefficient to the key shown.
 | `ETA_CONST` | `eta` | 1.0 | Spatially constant shift-driver damping. |
 | `KO_DISS_SIGMA` | `KreissOliger_strength_gauge` and `KreissOliger_strength_nongauge` | 0.3 when the key is omitted; the generated file sets 0.4 | One key sets both strengths. The key and both strengths exist only when Kreiss-Oliger dissipation is generated; without it the key is unbound and a line for it is reported as having no effect. |
 | `BSSN_SSL_H`, `BSSN_SSL_SIGMA` | `SSL_h`, `SSL_sigma` | 0.6, 20.0 | Amplitude and width of the slow-start lapse relaxation. |
-| `BSSN_CAHD_C` | `C_CAHD` | 0.06 (BSSN), 0.15 (fCCZ4) | Coefficient of the constraint-adjusted Hamiltonian damping. |
+| `CAHD_C` | `CAHD_C` | 0.015 | Coefficient `c_H` of the coarse-grid-adjusted Hamiltonian damping `d_t phi -= c_H (dsmin / CFL_FACTOR) H`. |
 | `CHI_FLOOR` | `chi_floor` | 1.0e-4 | `alpha` is floored at this value and the evolved conformal factor at the matching chi floor (`sqrt` of it for W). Must be finite and strictly positive: zero does not disable the floor, and the floor routine throws `CHI_FLOOR must be finite and positive` for a zero or negative value. |
-| `BSSN_CFL_FACTOR` | `CFL_FACTOR` | 0.25 | Registered only with `--ybs-momentum`; shares the host time-step read. |
+| `BSSN_CFL_FACTOR` | `CFL_FACTOR` | 0.25 | Registered with CAHD or `--ybs-momentum`; shares the host time-step read. |
 | `YBS_chi` | `YBS_chi` | 0.0 | Registered only with `--ybs-gamma`. |
-| `C_YBS_mom` | `C_YBS_mom` | 0.0 | Registered only with `--ybs-momentum`. |
+| `CAMD_C` | `CAMD_C` | 0.0 | Momentum-damping coefficient `c_M`; registered only with `--ybs-momentum`. |
 | `kappa1`, `kappa2` | `kappa1`, `kappa2` | 0.1, 0.0 | fCCZ4 Z4 damping coefficients; fCCZ4 only. |
 
 A coefficient written under its CodeParameter name when the table lists a
-different key is never read: for example a line `C_CAHD = 0.15` is reported as
-having no effect, and the key is `BSSN_CAHD_C`. A checkpoint stores these
+different key is never read: for example a line `SSL_h = 0.6` is reported as
+having no effect, and the key is `BSSN_SSL_H`. The former key `BSSN_CAHD_C` is
+likewise reported as having no effect. A checkpoint stores these
 coefficients and a restore rejects a changed value; see [Octree Grid, AMR, And
 Time Stepping](grid-amr-and-time-stepping.md).
 

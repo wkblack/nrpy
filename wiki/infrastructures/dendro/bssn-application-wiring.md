@@ -28,20 +28,22 @@ fCCZ4 directories; each executable constructs its own evolved fields from the
 same physical initial data. [Runtime Parameter Keys](runtime-parameters.md) lists
 every key the solver reads.
 
-The BSSN CAHD contribution depends on the evolved conformal factor:
+The coarse-grid-adjusted Hamiltonian damping (CAHD) adds
+`d_t phi -= CAHD_C (dsmin / CFL_FACTOR) H`, which for the evolved conformal
+factor reads
 
 ```text
-W_rhs += (C_CAHD/2) W H dx^2 / (dt (1 + 10 dx^2)),  default C_CAHD = 0.06.
-chi_rhs += C_CAHD chi H dx^2 / (dt (1 + 10 dx^2)).
+W_rhs   += 2 CAHD_C W   H dsmin / CFL_FACTOR,   default CAHD_C = 0.015;
+chi_rhs += 4 CAHD_C chi H dsmin / CFL_FACTOR.
 ```
 
-`C_CAHD` is a runtime parameter, read from the key `BSSN_CAHD_C`; `dx` is the
-smallest of the current block's three physical axis spacings, and `dt` is the
-current timestep. This choice
-preserves the cubic-grid coefficient and limits directional damping on
-rectangular domains. The factor of two
-follows `chi=W^2`; it preserves the same CAHD perturbation to the physical
-conformal factor. KO has no W-dependent scaling in this profile
+`CAHD_C` is a runtime parameter, read from the key `CAHD_C`; `CFL_FACTOR` is
+read from `BSSN_CFL_FACTOR`; `dsmin` is the smallest of the current block's
+three physical axis spacings. `dsmin / CFL_FACTOR` is `dsmin^2` over the local
+Courant time `CFL_FACTOR * dsmin`, so `CAHD_C` need not change with
+`CFL_FACTOR`; the RK4 diffusion bound is `CAHD_C < r_RK / (8 mu_max)`, about
+0.0192 for order 6 and 0.0179 for order 8. fCCZ4 uses the same expression.
+The factors 2 and 4 follow `W = e^{-2 phi}` and `chi = e^{-4 phi}`. KO has no W-dependent scaling in this profile
 (`enable_CAKO=False`). Brown's adjustment appears
 exactly once in the covariant `lambdaU` RHS. The generated constraint kernels
 are named `BSSN_constraints_order_N`; there is no generic constraint catch-all
@@ -57,11 +59,11 @@ default SSL_h = 0.6, SSL_sigma = 20.
 
 Here `t` is the time of the current RK stage. `SSL_h` and `SSL_sigma` are read
 from the keys `BSSN_SSL_H` and `BSSN_SSL_SIGMA`. A line written under a
-coefficient's CodeParameter name (`C_CAHD`, `SSL_h`, `SSL_sigma`) instead of its
-key is reported as having no effect.
+coefficient's CodeParameter name (`SSL_h`, `SSL_sigma`) instead of its key is
+reported as having no effect.
 
 Claim evidence:
-- Claim: The W and chi BSSN variants receive the corresponding CAHD factor using the minimum physical block spacing; the slow-start lapse subtracts `W SSL_h exp(-t^2/(2 SSL_sigma^2)) (alpha - W)` from the lapse right-hand side with `t` the RK stage time and `W` taken from the selected conformal factor, while KO is not scaled by W. The coefficients `C_CAHD`, `SSL_h`, and `SSL_sigma` are read from the keys `BSSN_CAHD_C`, `BSSN_SSL_H`, and `BSSN_SSL_SIGMA`, and a line under a CodeParameter name is never read. The conformal representation is a code-generation choice, not a runtime switch.
+- Claim: The W and chi BSSN variants receive the corresponding CAHD factor using the minimum physical block spacing; the slow-start lapse subtracts `W SSL_h exp(-t^2/(2 SSL_sigma^2)) (alpha - W)` from the lapse right-hand side with `t` the RK stage time and `W` taken from the selected conformal factor, while KO is not scaled by W. The coefficient `CAHD_C` is read from the key `CAHD_C`, and `SSL_h` and `SSL_sigma` from the keys `BSSN_SSL_H` and `BSSN_SSL_SIGMA`; a line under a CodeParameter name that has a mapped key is never read. The conformal representation is a code-generation choice, not a runtime switch.
 - Role: descriptive behavior
 - Deciding authority: `nrpy/infrastructures/Dendro/general_relativity/rhs_eval.py`, `register_CFunction_rhs_eval`; `nrpy/infrastructures/Dendro/CodeParameters.py`, `Q1_TOML_PARAMETER_NAMES` and `output_toml_bindings`; `nrpy/examples/dendro_bssn.py`, `parse_args` and `main`.
 - Corroboration: `nrpy/infrastructures/Dendro/general_relativity/ADM_to_BSSN.py`, `register_CFunction_ADM_to_BSSN`, uses the selected conformal factor in initial-data conversion; `nrpy/examples/tests/dendro_application_check.py`, `Leg.run_negatives`, the unread-key warning case.
@@ -314,10 +316,10 @@ Eq. (47).
 `--ybs-momentum` adds the covariant, symmetric trace-free gradient of the
 lower conformal momentum residual to the conformal extrinsic-curvature RHS.
 The help cites Yo, Lin, and Cao, Eq. (56). NRPy multiplies this term by
-`C_YBS_mom * BSSN_CFL_FACTOR * min(abs(dx), abs(dy), abs(dz)) * W`, using the
+`CAMD_C * min(abs(dx), abs(dy), abs(dz)) / BSSN_CFL_FACTOR * W`, using the
 current Cartesian block spacing, the runtime CFL factor, and the conformal
-factor `W` built from the evolved variable (`W` or `chi`); `C_YBS_mom` defaults
-to 0, which disables the term, and its recommended value is 1.75 (see [YBS-MOM](../../equations/general-relativity/ybs-momentum-damping.md#strength-and-timestep-bound)).
+factor `W` built from the evolved variable (`W` or `chi`); `CAMD_C` defaults
+to 0, which disables the term, and its recommended value is 0.0625 (see [YBS-MOM](../../equations/general-relativity/ybs-momentum-damping.md#strength-and-timestep-bound)).
 This local coefficient is NRPy's timestep scaling and `W` weight of the paper's term.
 It adds no evolved gridfunction. See [YBS-MOM](../../equations/general-relativity/ybs-momentum-damping.md)
 for the equation and the limits of a damping or stability claim.
@@ -328,7 +330,7 @@ There are no `--ko` or `--no-ko` arguments. The runtime strength remains
 `KO_DISS_SIGMA`.
 
 Claim evidence:
-- Claim: The Dendro examples expose independent default-off Gamma and momentum adjustments whose runtime strengths `YBS_chi` and `C_YBS_mom` default to 0, which removes each term; the recommended values are advice from the linked equation pages, not a stability guarantee; the momentum coefficient uses the current block's minimum physical spacing, the evolution CFL factor, and the conformal-factor weight `W`, without adding evolved fields.
+- Claim: The Dendro examples expose independent default-off Gamma and momentum adjustments whose runtime strengths `YBS_chi` and `CAMD_C` default to 0, which removes each term; the recommended values are advice from the linked equation pages, not a stability guarantee; the momentum coefficient uses the current block's minimum physical spacing, the evolution CFL factor, and the conformal-factor weight `W`, without adding evolved fields.
 - Role: descriptive behavior
 - Deciding authority: `nrpy/examples/dendro_bssn.py` and `nrpy/examples/dendro_fccz4.py`, `parse_args` and `main`; `nrpy/infrastructures/Dendro/general_relativity/rhs_eval.py`, `register_CFunction_rhs_eval`; `nrpy/infrastructures/Dendro/CodeParameters.py`, `Q1_TOML_PARAMETER_NAMES`.
 - Corroboration: `nrpy/equations/general_relativity/BSSN_RHSs.py` and `fCCZ4_RHSs.py`, canonical adjustment construction; the cited Yo et al. equations.
@@ -337,19 +339,19 @@ Claim evidence:
 
 The printed run commands name `pars/q1.par.lowres.toml`, not the generated
 `pars/bssn.toml`. For a default generation (`--fd-order 6`, W) the two files give
-different values for `ETA_CONST` and `TPID_FILEPREFIX`, and the other two keys
-differ in the cases noted in the table:
+different values for `ETA_CONST` and `TPID_FILEPREFIX`; `CAHD_C` agrees, and
+`BSSN_ELE_ORDER` differs unless `--fd-order 6` was chosen:
 
 | Key | Generated `pars/bssn.toml` | `pars/q1.par.lowres.toml` |
 | --- | --- | --- |
 | `ETA_CONST` | 1.0 | 2.0 |
 | `TPID_FILEPREFIX` | `tp` | `tp_q001` |
-| `BSSN_CAHD_C` | 0.06 | 0.06 (the fCCZ4 generated file sets 0.15) |
+| `CAHD_C` | 0.015 | 0.015 (the fCCZ4 generated file also sets 0.015) |
 | `BSSN_ELE_ORDER` | the `--fd-order` value | 6 |
 
 A run of the printed commands therefore has shift-driver damping `eta = 2.0` in
-both formulations, the CAHD coefficient 0.06 in both (the fCCZ4 default of 0.15
-does not apply), and finite-difference order 6 whatever `--fd-order` was. The
+both formulations, the CAHD coefficient 0.015 in both, and finite-difference
+order 6 whatever `--fd-order` was. The
 closing message of each example, "TwoPunctures alpha=W, and eta=1 enabled",
 describes the generated default, not the q1 file. The q1 file also sets keys that
 the generated file leaves to host fallbacks; [Runtime Parameter
@@ -358,7 +360,7 @@ the generated file alone therefore has no horizon finder, constant wavelet
 tolerance, no Nyquist refinement, and one VTU field of each kind.
 
 Claim evidence:
-- Claim: The packaged q1 file sets `ETA_CONST = 2.0`, `TPID_FILEPREFIX = "tp_q001"`, `BSSN_CAHD_C = 0.06`, and `BSSN_ELE_ORDER = 6`, whereas the generated `pars/bssn.toml` sets `ETA_CONST = 1.0`, `TPID_FILEPREFIX = "tp"`, `BSSN_CAHD_C = 0.06`, and `BSSN_ELE_ORDER` equal to the `--fd-order` value (the generated `pars/fccz4.toml` sets `BSSN_CAHD_C = 0.15`); the printed run commands name the q1 file; keys that q1 sets and the generated file omits take the host fallbacks in the generated run.
+- Claim: The packaged q1 file sets `ETA_CONST = 2.0`, `TPID_FILEPREFIX = "tp_q001"`, `CAHD_C = 0.015`, and `BSSN_ELE_ORDER = 6`, whereas the generated `pars/bssn.toml` sets `ETA_CONST = 1.0`, `TPID_FILEPREFIX = "tp"`, `CAHD_C = 0.015`, and `BSSN_ELE_ORDER` equal to the `--fd-order` value (the generated `pars/fccz4.toml` also sets `CAHD_C = 0.015`); the printed run commands name the q1 file; keys that q1 sets and the generated file omits take the host fallbacks in the generated run.
 - Role: descriptive behavior
 - Deciding authority: `nrpy/examples/q1.par.lowres.toml` (the key values); `nrpy/infrastructures/Dendro/param_toml.py`, `generate_default_parfile`; `nrpy/infrastructures/Dendro/general_relativity/rhs_eval.py`, `register_CFunction_rhs_eval` (the CAHD defaults); `nrpy/infrastructures/Dendro/main_cpp.py`, `output_main_cpp` (the host fallbacks); `nrpy/examples/dendro_bssn.py`, `main` (the printed commands).
 - Corroboration: `nrpy/infrastructures/Dendro/CodeParameters.py`, `Q1_TOML_PARAMETER_NAMES`, the key names of the registered coefficients.

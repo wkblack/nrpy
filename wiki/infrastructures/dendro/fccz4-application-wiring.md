@@ -17,8 +17,7 @@ Each generated directory contains `pars/fccz4.toml` with the generated
 runtime defaults and `pars/q1.par.lowres.toml` with the supplied equal-mass
 TwoPunctures BBH parameters. The printed single-rank `--tpid` command and the
 MPI evolution command both name the q1 file, and its values differ from the
-generated defaults, among them `BSSN_CAHD_C` (0.06 in q1, 0.15 in the generated
-fCCZ4 file); see [q1 versus generated
+generated defaults, among them `ETA_CONST`; see [q1 versus generated
 defaults](bssn-application-wiring.md#q1-versus-generated-defaults).
 [Production Validation And Deferred Checks](production-validation-and-deferred-checks.md)
 states which of these files and commands CI exercises. The packaged q1 file
@@ -32,18 +31,19 @@ coefficients, paper references, and in-script KO setting are described in
 [BSSN Application Wiring](bssn-application-wiring.md#optional-yo-et-al-adjustments).
 The fCCZ4 shift driver receives the adjusted fCCZ4 connection RHS.
 
-The fCCZ4 CAHD contribution is
+The fCCZ4 CAHD contribution is the BSSN one,
 
 ```text
-W_rhs   += 2 C_CAHD W H dt,    for W evolution;
-chi_rhs += 4 C_CAHD chi H dt,  for chi evolution.
-Default C_CAHD = 0.15.
+W_rhs   += 2 CAHD_C W   H dsmin / CFL_FACTOR,  for W evolution;
+chi_rhs += 4 CAHD_C chi H dsmin / CFL_FACTOR,  for chi evolution.
+Default CAHD_C = 0.015.
 ```
 
-`C_CAHD` is a runtime parameter, read from the key `BSSN_CAHD_C`. The chi term follows from `chi=W^2` and
-`chi_rhs=2 W W_rhs`. Here `H` is the BSSN-shaped Hamiltonian expression used
-by the RHS adjustment and now also reported separately; it is not the distinct
-`H_Z4` constraint. This equation is not the BSSN CAHD equation. fCCZ4 retains
+`CAHD_C` is a runtime parameter, read from the key `CAHD_C`; `dsmin` is the
+smallest block spacing and `CFL_FACTOR` is read from `BSSN_CFL_FACTOR`. The chi
+term follows from `chi=W^2` and `chi_rhs=2 W W_rhs`. Here `H` is the
+BSSN-shaped Hamiltonian expression used by the RHS adjustment and now also
+reported separately; it is not the distinct `H_Z4` constraint. fCCZ4 retains
 its formulation's Lambda RHS rather than adding Brown's BSSN adjustment. Order-specific
 constraint kernels are named `fCCZ4_constraints_order_N`.
 
@@ -59,7 +59,7 @@ literal 1 stands for `kappa3`. The spatial Z4 diagnostic `Z4constraintU^i` is
 diagnostic files carry no `Theta` column.
 
 Claim evidence:
-- Claim: fCCZ4's W and chi CAHD terms use the BSSN-shaped Hamiltonian expression with a runtime coefficient read from the key `BSSN_CAHD_C` (generated default 0.15; the packaged q1 file sets 0.06), not `H_Z4`; changing the generated conformal factor changes the coefficient from 2 to 4. The Z4 damping coefficients `kappa1` and `kappa2` are read from keys of the same names with defaults 0.1 and 0. With the `OnePlusLog` lapse option `d_t alpha = beta^i d_i alpha - 2 alpha (K - 2 Theta)` plus the slow-start term; the `kappa1` terms have no additional lapse factor and `kappa3` is 1; `Z4constraintU^i = Lambdatilde^i - DeltaGamma^i` is twice `Zbar^i`; the diagnostic files carry no `Theta` column.
+- Claim: fCCZ4's W and chi CAHD terms use the BSSN-shaped Hamiltonian expression with the BSSN prefactor `CAHD_C * dsmin / CFL_FACTOR` and a runtime coefficient read from the key `CAHD_C` (default 0.015 in the generated and q1 files), not `H_Z4`; changing the generated conformal factor changes the coefficient from 2 to 4. The Z4 damping coefficients `kappa1` and `kappa2` are read from keys of the same names with defaults 0.1 and 0. With the `OnePlusLog` lapse option `d_t alpha = beta^i d_i alpha - 2 alpha (K - 2 Theta)` plus the slow-start term; the `kappa1` terms have no additional lapse factor and `kappa3` is 1; `Z4constraintU^i = Lambdatilde^i - DeltaGamma^i` is twice `Zbar^i`; the diagnostic files carry no `Theta` column.
 - Role: descriptive behavior
 - Deciding authority: `nrpy/infrastructures/Dendro/general_relativity/rhs_eval.py`, `register_CFunction_rhs_eval`; `nrpy/equations/general_relativity/fCCZ4_RHSs.py` (`kappa1`, `kappa2` registration); `nrpy/equations/general_relativity/fCCZ4_constraints.py` (`Z4constraintU`, `ZbarU`); `nrpy/infrastructures/Dendro/CodeParameters.py`, `Q1_TOML_PARAMETER_NAMES`.
 - Corroboration: `nrpy/infrastructures/Dendro/general_relativity/fCCZ4_constraints.py`, `register_CFunction_fCCZ4_constraints`, emits both `H` and formulation-specific `H_Z4` diagnostics.

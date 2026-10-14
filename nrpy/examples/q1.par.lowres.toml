@@ -322,8 +322,9 @@ BSSN_SSL_SIGMA = 20.0
 BSSN_KO_SIGMA_SCALE_BY_CONFORMAL = false
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# CAHD: Hamiltonian damping strength
-BSSN_CAHD_C = 0.06
+# CAHD: Hamiltonian damping strength c_H in d_t phi -= c_H (dsmin/CFL) H
+# (RK4 stability: c_H < 0.0192 for FD6, 0.0179 for FD8)
+CAHD_C = 0.015
 
 
 ########################################################################
