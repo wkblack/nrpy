@@ -291,10 +291,10 @@ class BSSNRHSs:
             self.Lambdabar_rhsU[i] += sp.Rational(2, 3) * DGammaU[i] * Dbarbetacontraction  # Term 3
 
         if enable_YBS_Gamma_constraint_adjustment:
-            YBS_chi = sp.Symbol("YBS_chi", real=True)
+            CCD_C = sp.Symbol("CCD_C", real=True)
             for i in range(3):
                 self.Lambdabar_rhsU[i] += (
-                    -YBS_chi
+                    -CCD_C
                     * (LambdabarU[i] - DGammaU[i])
                     * Dbarbetacontraction
                 )

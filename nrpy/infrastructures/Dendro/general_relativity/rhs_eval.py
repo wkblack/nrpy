@@ -70,7 +70,7 @@ def register_CFunction_rhs_eval(
     :param LapseEvolutionOption: Lapse gauge condition.
     :param ShiftEvolutionOption: Shift gauge condition.
     :param enable_YBS_Gamma_constraint_adjustment: Add the Yo et al. Gamma-constraint
-        term and register YBS_chi, whose default 0 disables it.
+        term (CCD) and register CCD_C, whose default 0 disables it.
     :param enable_YBS_momentum_constraint_adjustment: Add Yo et al. momentum
         damping (CAMD) with coefficient CAMD_C times local spacing over CFL_FACTOR
         times the conformal factor W, and register CAMD_C, whose default 0
@@ -114,15 +114,15 @@ def register_CFunction_rhs_eval(
             par.register_CodeParameter(
                 "REAL",
                 __name__,
-                "YBS_chi",
+                "CCD_C",
                 0.0,
                 add_to_parfile=True,
                 description=(
-                    "2/3 (BSSN) or 4/3 (fCCZ4) = recommended; the usual xi=1 choice "
-                    "of Yo, Lin, and Cao, which gives the same C^i Dbar_k beta^k "
-                    "coefficient in both formulations. Range: 0 (off) up to the "
-                    "recommended value; no stability bound was derived, and negative "
-                    "values should not be used."
+                    "1.0 = recommended for BSSN; connection-constraint damping (CCD) strength a in "
+                    "d_t Lambdabar^i += -a C^i Dbar_k beta^k with C^i = Lambdabar^i - Delta^i. "
+                    "fCCZ4 adds +(2/3) C^i Dbar_k beta^k in its baseline, so it matches a BSSN "
+                    "value a with a + 2/3. Range: 0 (off) to about 2; no stability bound was "
+                    "derived, and negative values should not be used."
                 ),
             )
         if enable_YBS_momentum_constraint_adjustment:
