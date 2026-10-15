@@ -46,7 +46,7 @@ Claim evidence:
 
 The historical YBS Gamma option applies to either formulation. When enabled,
 the registrar leaves the coordinate/options cache string unchanged, registers
-the runtime `YBS_chi` parameter (default 0, which disables the term) after the
+the runtime `CCD_C` parameter (default 0, which disables the term) after the
 parallel-registration guard, and
 forwards the Boolean to the selected nongauge and gauge owners. BSSN defines
 the symbolic addition once; fCCZ4 reuses that adjusted base, with the

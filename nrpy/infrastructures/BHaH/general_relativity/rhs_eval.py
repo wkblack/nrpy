@@ -88,7 +88,7 @@ def register_CFunction_rhs_eval(
     :param validate_expressions: Whether to validate generated sympy expressions against trusted values.
     :param enable_fCCZ4: Use fCCZ4 instead of BSSN evolution equations.
     :param enable_YBS_Gamma_constraint_adjustment: Enable the YBS connection-constraint
-        adjustment and register the runtime parameter YBS_chi, whose default 0 disables it.
+        adjustment (CCD) and register the runtime parameter CCD_C, whose default 0 disables it.
     :param enable_YBS_momentum_constraint_adjustment: Enable the W-weighted
         Yo--Lin--Cao momentum-constraint adjustment (CAMD) and register the runtime
         parameter CAMD_C, whose default 0 disables it and whose recommended value is 0.0625.
@@ -165,15 +165,16 @@ def register_CFunction_rhs_eval(
         par.register_CodeParameter(
             "REAL",
             __name__,
-            "YBS_chi",
+            "CCD_C",
             0.0,
             commondata=True,
             add_to_parfile=True,
             description=(
-                "2/3 (BSSN) or 4/3 (fCCZ4) = recommended; the usual xi=1 choice of "
-                "Yo, Lin, and Cao, which gives the same C^i Dbar_k beta^k coefficient "
-                "in both formulations. Range: 0 (off) up to the recommended value; "
-                "no stability bound was derived, and negative values should not be used."
+                "1.0 = recommended for BSSN; connection-constraint damping (CCD) strength a in "
+                "d_t Lambdabar^i += -a C^i Dbar_k beta^k with C^i = Lambdabar^i - Delta^i. "
+                "fCCZ4 adds +(2/3) C^i Dbar_k beta^k in its baseline, so it matches a BSSN "
+                "value a with a + 2/3. Range: 0 (off) to about 2; no stability bound was "
+                "derived, and negative values should not be used."
             ),
         )
     if enable_CAHD or enable_YBS_momentum_constraint_adjustment:

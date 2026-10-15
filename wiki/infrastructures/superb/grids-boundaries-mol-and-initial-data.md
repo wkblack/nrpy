@@ -113,7 +113,7 @@ Both checked superB black-hole examples explicitly set
 `enable_YBS_Gamma_constraint_adjustment = False` and forward it to the shared
 BHaH `register_CFunction_rhs_eval`. superB owns no separate YBS RHS fork:
 changing that source constant routes through the BHaH registrar to the BSSN
-RHS and gauge owners, while the enabled-only runtime `YBS_chi` parameter uses
+RHS and gauge owners, while the enabled-only runtime `CCD_C` parameter uses
 the reused BHaH CodeParameters flow. Neither example exposes a command-line
 switch for the code-generation choice.
 

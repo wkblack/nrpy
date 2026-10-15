@@ -155,7 +155,7 @@ to 0.4. The solver binds each coefficient to the key shown.
 | `CAHD_C` | `CAHD_C` | 0.015 | Coefficient `c_H` of the coarse-grid-adjusted Hamiltonian damping `d_t phi -= c_H (dsmin / CFL_FACTOR) H`. |
 | `CHI_FLOOR` | `chi_floor` | 1.0e-4 | `alpha` is floored at this value and the evolved conformal factor at the matching chi floor (`sqrt` of it for W). Must be finite and strictly positive: zero does not disable the floor, and the floor routine throws `CHI_FLOOR must be finite and positive` for a zero or negative value. |
 | `BSSN_CFL_FACTOR` | `CFL_FACTOR` | 0.25 | Registered with CAHD or `--ybs-momentum`; shares the host time-step read. |
-| `YBS_chi` | `YBS_chi` | 0.0 | Registered only with `--ybs-gamma`. |
+| `CCD_C` | `CCD_C` | 0.0 | Registered only with `--ybs-gamma`. |
 | `CAMD_C` | `CAMD_C` | 0.0 | Momentum-damping coefficient `c_M`; registered only with `--ybs-momentum`. |
 | `kappa1`, `kappa2` | `kappa1`, `kappa2` | 0.1, 0.0 | fCCZ4 Z4 damping coefficients; fCCZ4 only. |
 

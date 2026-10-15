@@ -103,8 +103,8 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help=(
             "add the Gamma-constraint term to the connection equation (default: off); "
-            "its runtime strength YBS_chi defaults to 0, which disables it "
-            "(recommended 2/3); "
+            "its runtime strength CCD_C defaults to 0, which disables it "
+            "(recommended 1.0 for BSSN); "
             "Yo, Baumgarte and Shapiro, arXiv:gr-qc/0209066, Eq. (45); "
             "Yo, Lin and Cao, arXiv:1205.5111, Eq. (47)"
         ),

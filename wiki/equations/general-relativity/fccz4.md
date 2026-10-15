@@ -403,30 +403,30 @@ already adjusted BSSN base instead of defining another symbolic term. Because
 the reused connection slot stores `LambdatildeU`, the shared addition becomes
 
 ```text
--YBS_chi * (LambdatildeU[i] - DGammaU[i]) * Dbar_j beta^j,
+-CCD_C * (LambdatildeU[i] - DGammaU[i]) * Dbar_j beta^j,
 ```
 
-which is `-YBS_chi*C^i*Dbar_j beta^j` for the fCCZ4 connection constraint;
+which is `-CCD_C*C^i*Dbar_j beta^j` for the fCCZ4 connection constraint;
 `Dbar_j beta^j = Dhat_j beta^j` under the determinant constraint used here.
 The fCCZ4 correction does not repeat it. The Boolean selects a separate
 internal fCCZ4 cache while leaving the coordinate/options string unchanged.
 
 Claim evidence:
-- Claim: enabling the YBS option selects the adjusted shared BSSN connection base exactly once for fCCZ4, where the evolved connection slot turns the addition into `-YBS_chi*C^i*Dbar_j beta^j`; the option does not alter coordinate/options strings.
+- Claim: enabling the YBS option selects the adjusted shared BSSN connection base exactly once for fCCZ4, where the evolved connection slot turns the addition into `-CCD_C*C^i*Dbar_j beta^j`; the option does not alter coordinate/options strings.
 - Role: descriptive behavior
 - Deciding authority: [BSSN_RHSs.py](../../../nrpy/equations/general_relativity/BSSN_RHSs.py), `BSSNRHSs.__init__` and `BSSNRHSs_dict.get_rhs`; [fCCZ4_RHSs.py](../../../nrpy/equations/general_relativity/fCCZ4_RHSs.py), `FCCZ4RHSs.__init__` and `FCCZ4RHSsDict.get_rhs`
 - Corroboration: [fCCZ4_constraints.py](../../../nrpy/equations/general_relativity/fCCZ4_constraints.py), `FCCZ4Constraints.__init__`; [fCCZ4_RHSs_Cartesian.py](../../../nrpy/equations/general_relativity/tests/fCCZ4_RHSs_Cartesian.py), representative jointly enabled `trusted_dict`
 
 The fCCZ4 connection RHS already contains `+(2/3) C^i Dbar_j beta^j`, so the
 net coefficient of `C^i Dbar_j beta^j` in the constraint propagation is
-`2/3 - YBS_chi`. It vanishes at `YBS_chi = 2/3`. The BSSN `xi=1` coefficient
-`-2/3` therefore needs `YBS_chi = 4/3` in fCCZ4, which is the recommended
-maximum. It is set by matching the BSSN `xi=1` coefficient, not by a stability
-bound. The runtime default `YBS_chi = 0` removes the term. Larger
-values have no supporting derivation or source here.
+`2/3 - CCD_C`. It vanishes at `CCD_C = 2/3`. The BSSN `xi=1` coefficient
+`-2/3` therefore needs `CCD_C = 4/3` in fCCZ4; in general a BSSN value `a`
+corresponds to `a + 2/3` in fCCZ4, so the recommended BSSN value `1.0` maps to
+`5/3`. These values are set by matching, not by a stability bound. The runtime
+default `CCD_C = 0` removes the term.
 
 Claim evidence:
-- Claim: the fCCZ4 net coefficient of `C^i*Dbar_j beta^j` in the constraint propagation is `2/3 - YBS_chi`, so `YBS_chi = 4/3` reproduces the BSSN `xi=1` coefficient by matching, not by a derived stability bound, and the default `YBS_chi = 0` removes the term.
+- Claim: the fCCZ4 net coefficient of `C^i*Dbar_j beta^j` in the constraint propagation is `2/3 - CCD_C`, so `CCD_C = a + 2/3` reproduces the BSSN coefficient for value `a` (4/3 for `xi=1`) by matching, not by a derived stability bound, and the default `CCD_C = 0` removes the term.
 - Role: descriptive behavior
 - Deciding authority: [fCCZ4_RHSs.py](../../../nrpy/equations/general_relativity/fCCZ4_RHSs.py), `FCCZ4RHSs.__init__` connection composition; [BSSN_RHSs.py](../../../nrpy/equations/general_relativity/BSSN_RHSs.py), `BSSNRHSs.__init__` YBS Gamma branch
 - Corroboration: [rhs_eval.py](../../../nrpy/infrastructures/BHaH/general_relativity/rhs_eval.py), `register_CFunction_rhs_eval` parameter registration; [Yo, Lin, and Cao, arXiv:1205.5111v2](https://arxiv.org/pdf/1205.5111v2), Eq. (47)

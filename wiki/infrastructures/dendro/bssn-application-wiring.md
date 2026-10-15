@@ -303,9 +303,9 @@ Claim evidence:
 Both examples accept `--ybs-gamma` and `--ybs-momentum` independently or
 together. Both default to off. `--ybs-gamma` forwards the canonical Gamma
 constraint adjustment to the evolution and shift-driver equations. Its runtime
-coefficient is `YBS_chi`, defaulting to 0, which disables the term; the
-recommended maximum is 2/3 for BSSN and 4/3 for fCCZ4, a customary choice for
-BSSN and a matching choice for fCCZ4, not a stability bound (see
+coefficient is `CCD_C`, defaulting to 0, which disables the term; the
+recommended value is 1.0 for BSSN and its fCCZ4 match 5/3 (a BSSN value `a`
+maps to `a + 2/3`), maintainer and matching choices, not stability bounds (see
 [BSSN Family](../../equations/general-relativity/bssn-family.md) and
 [fCCZ4](../../equations/general-relativity/fccz4.md)). This is the additional
 NRPy coefficient, with Brown's BSSN contribution retained separately. The help cites
@@ -330,7 +330,7 @@ There are no `--ko` or `--no-ko` arguments. The runtime strength remains
 `KO_DISS_SIGMA`.
 
 Claim evidence:
-- Claim: The Dendro examples expose independent default-off Gamma and momentum adjustments whose runtime strengths `YBS_chi` and `CAMD_C` default to 0, which removes each term; the recommended values are advice from the linked equation pages, not a stability guarantee; the momentum coefficient uses the current block's minimum physical spacing, the evolution CFL factor, and the conformal-factor weight `W`, without adding evolved fields.
+- Claim: The Dendro examples expose independent default-off Gamma and momentum adjustments whose runtime strengths `CCD_C` and `CAMD_C` default to 0, which removes each term; the recommended values are advice from the linked equation pages, not a stability guarantee; the momentum coefficient uses the current block's minimum physical spacing, the evolution CFL factor, and the conformal-factor weight `W`, without adding evolved fields.
 - Role: descriptive behavior
 - Deciding authority: `nrpy/examples/dendro_bssn.py` and `nrpy/examples/dendro_fccz4.py`, `parse_args` and `main`; `nrpy/infrastructures/Dendro/general_relativity/rhs_eval.py`, `register_CFunction_rhs_eval`; `nrpy/infrastructures/Dendro/CodeParameters.py`, `Q1_TOML_PARAMETER_NAMES`.
 - Corroboration: `nrpy/equations/general_relativity/BSSN_RHSs.py` and `fCCZ4_RHSs.py`, canonical adjustment construction; the cited Yo et al. equations.

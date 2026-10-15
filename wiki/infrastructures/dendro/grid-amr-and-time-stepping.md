@@ -100,7 +100,7 @@ run then aborts with the generic `checkpoint restore failed` message:
   the generated solver's.
 - Every emitted `CodeParameter` equals its stored value exactly. For BSSN these
   are `CAHD_C`, `CFL_FACTOR`, both Kreiss-Oliger strengths (file key
-  `KO_DISS_SIGMA`), `SSL_h`, `SSL_sigma`, `chi_floor`, and `eta`, plus `YBS_chi`
+  `KO_DISS_SIGMA`), `SSL_h`, `SSL_sigma`, `chi_floor`, and `eta`, plus `CCD_C`
   and `CAMD_C` when generated, and `kappa1` and `kappa2` for fCCZ4. Changing
   `ETA_CONST`, `KO_DISS_SIGMA`, `CAHD_C`, `BSSN_SSL_H`, `BSSN_SSL_SIGMA`, or
   `CHI_FLOOR` in the restart file is therefore rejected.
