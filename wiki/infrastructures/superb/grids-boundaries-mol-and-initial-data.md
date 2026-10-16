@@ -110,7 +110,7 @@ Lines hook. The checked collision example uses BSSN owners and does not wire
 fCCZ4 RHSs, gauge RHSs, or `Theta_fCCZ4`.
 
 Both checked superB black-hole examples explicitly set
-`enable_YBS_Gamma_constraint_adjustment = False` and forward it to the shared
+`enable_CCD = False` and forward it to the shared
 BHaH `register_CFunction_rhs_eval`. superB owns no separate YBS RHS fork:
 changing that source constant routes through the BHaH registrar to the BSSN
 RHS and gauge owners, while the enabled-only runtime `CCD_C` parameter uses
@@ -120,7 +120,7 @@ switch for the code-generation choice.
 Claim evidence:
 - Claim: both superB black-hole generators keep the YBS adjustment explicitly default-disabled and forward the option to the shared BHaH RHS registrar; superB does not own a separate equation fork.
 - Role: descriptive behavior
-- Deciding authority: [superB_two_blackholes_collide.py](../../../nrpy/examples/superB_two_blackholes_collide.py) and [superB_blackhole_spectroscopy.py](../../../nrpy/examples/superB_blackhole_spectroscopy.py), `enable_YBS_Gamma_constraint_adjustment` forwarding
+- Deciding authority: [superB_two_blackholes_collide.py](../../../nrpy/examples/superB_two_blackholes_collide.py) and [superB_blackhole_spectroscopy.py](../../../nrpy/examples/superB_blackhole_spectroscopy.py), `enable_CCD` forwarding
 - Corroboration: [rhs_eval.py](../../../nrpy/infrastructures/BHaH/general_relativity/rhs_eval.py), `register_CFunction_rhs_eval`
 
 Claim evidence:

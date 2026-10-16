@@ -210,8 +210,8 @@ coefficient by `W`; it leaves the direct, stateless formulation unchanged.
 
 ### Dendro block spacing
 
-The Dendro examples expose this term with `--ybs-momentum`, independently of
-`--ybs-gamma`. Dendro computes `dsmin` once per Cartesian block as
+The Dendro examples expose this term with `--camd`, independently of
+`--ccd`. Dendro computes `dsmin` once per Cartesian block as
 `min(abs(dx), abs(dy), abs(dz))`; it broadcasts the scalar in SIMD kernels.
 The generated RHS uses `CAMD_C * dsmin / BSSN_CFL_FACTOR * W`, with the same
 CFL factor used for evolution and `W` built from the evolved conformal factor

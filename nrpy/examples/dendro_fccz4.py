@@ -99,10 +99,29 @@ def parse_args() -> argparse.Namespace:
         help="evolved conformal factor (default: W)",
     )
     parser.add_argument(
-        "--ybs-gamma",
+        "--cahd",
+        dest="cahd",
+        action="store_true",
+        default=True,
+        help=(
+            "add coarse-grid-adjusted Hamiltonian damping (CAHD) to the conformal-factor "
+            "equation (default: on); its runtime strength CAHD_C defaults to 0.015; "
+            "Etienne, Phys. Rev. D 110, 064045 (2024), Eq. (26), with a local "
+            "spacing-over-CFL coefficient"
+        ),
+    )
+    parser.add_argument(
+        "--no-cahd",
+        dest="cahd",
+        action="store_false",
+        help="omit CAHD from the generated right-hand sides",
+    )
+    parser.add_argument(
+        "--ccd",
         action="store_true",
         help=(
-            "add the Gamma-constraint term to the connection equation (default: off); "
+            "add connection-constraint damping (CCD) to the connection equation "
+            "(default: off); "
             "its runtime strength CCD_C defaults to 0, which disables it "
             "(recommended 1.0 for BSSN); "
             "Yo, Baumgarte and Shapiro, arXiv:gr-qc/0209066, Eq. (45); "
@@ -110,10 +129,10 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
-        "--ybs-momentum",
+        "--camd",
         action="store_true",
         help=(
-            "add momentum-gradient damping (default: off); "
+            "add coarse-grid-adjusted momentum damping (CAMD) (default: off); "
             "its runtime strength CAMD_C defaults to 0, which disables it "
             "(recommended 0.0625); "
             "Yo, Lin and Cao, arXiv:1205.5111, Eq. (56), "
@@ -153,10 +172,10 @@ def main() -> None:
             CoordSystem=COORD_SYSTEM,
             LapseEvolutionOption=LAPSE_EVOLUTION_OPTION,
             ShiftEvolutionOption=SHIFT_EVOLUTION_OPTION,
-            enable_YBS_Gamma_constraint_adjustment=args.ybs_gamma,
-            enable_YBS_momentum_constraint_adjustment=args.ybs_momentum,
+            enable_CCD=args.ccd,
+            enable_CAMD=args.camd,
             enable_SSL=True,
-            enable_CAHD=True,
+            enable_CAHD=args.cahd,
             enable_intrinsics=enable_intrinsics,
         )
         fCCZ4_constraints.register_CFunction_fCCZ4_constraints(
@@ -358,8 +377,9 @@ typedef double DOUBLE;
     print("Generated centered FD/KO profiles: 4/2, 6/4, 8/6.")
     print(f"Selected runtime profile: FD{args.fd_order}/KO{ko_fd_order}.")
     print(
-        f"{args.conformal_factor} evolution, SSL, fCCZ4 CAHD, "
-        "TwoPunctures alpha=W, and eta=1 enabled."
+        f"{args.conformal_factor} evolution, SSL, "
+        + ("fCCZ4 CAHD, " if args.cahd else "")
+        + "TwoPunctures alpha=W, and eta=1 enabled."
     )
     print(
         f"TwoPunctures parameter files: pars/{SOLVER_STEM}.toml (generated defaults) "

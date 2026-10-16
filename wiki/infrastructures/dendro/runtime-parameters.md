@@ -45,7 +45,7 @@ Claim evidence:
 | `BSSN_ELE_ORDER` | the `--fd-order` value used at generation (6 by default) | the same value | 6 | Element and finite-difference order; must be 4, 6, or 8. It selects the order-specific kernels; a restore requires it to equal the order stored in the checkpoint and is rejected otherwise; see [Finite-Difference Profiles And Dendro Conformance](finite-difference-profiles-and-dendro-conformance.md). |
 | `BSSN_RK_TIME_BEGIN`, `BSSN_RK_TIME_END` | 0.0, 700.0 | 0.0, 1000000.0 | 0.0, 1000000.0 | Evolution runs while time is below the end time; the end time must exceed the begin time. |
 | `BSSN_MAX_ITERATIONS` | no limit | none | none | Maximum number of time steps. It is a root key, so a line appended after the last `[table]` header of a file does not set it. |
-| `BSSN_CFL_FACTOR` | 0.25 | none; 0.25 with `--ybs-momentum` | 0.25 | Time step is this factor times the smallest physical axis spacing at the current finest level; positive and finite. This is also the CodeParameter `CFL_FACTOR` when `--ybs-momentum` is generated. |
+| `BSSN_CFL_FACTOR` | 0.25 | none; 0.25 with `--camd` | 0.25 | Time step is this factor times the smallest physical axis spacing at the current finest level; positive and finite. This is also the CodeParameter `CFL_FACTOR` when `--camd` is generated. |
 | `BSSN_TIME_STEP_OUTPUT_FREQ` | 80 | 80 | 80 | Terminal print cadence in steps; the per-step lapse check runs regardless. |
 | `BSSN_GRID_MIN_X`, `_Y`, `_Z` | -400.0 | none | -400.0 | Lower domain bounds. |
 | `BSSN_GRID_MAX_X`, `_Y`, `_Z` | 400.0 | none | 400.0 | Upper domain bounds; each must exceed the lower bound of its axis, with finite widths. |
@@ -154,9 +154,9 @@ to 0.4. The solver binds each coefficient to the key shown.
 | `BSSN_SSL_H`, `BSSN_SSL_SIGMA` | `SSL_h`, `SSL_sigma` | 0.6, 20.0 | Amplitude and width of the slow-start lapse relaxation. |
 | `CAHD_C` | `CAHD_C` | 0.015 | Coefficient `c_H` of the coarse-grid-adjusted Hamiltonian damping `d_t phi -= c_H (dsmin / CFL_FACTOR) H`. |
 | `CHI_FLOOR` | `chi_floor` | 1.0e-4 | `alpha` is floored at this value and the evolved conformal factor at the matching chi floor (`sqrt` of it for W). Must be finite and strictly positive: zero does not disable the floor, and the floor routine throws `CHI_FLOOR must be finite and positive` for a zero or negative value. |
-| `BSSN_CFL_FACTOR` | `CFL_FACTOR` | 0.25 | Registered with CAHD or `--ybs-momentum`; shares the host time-step read. |
-| `CCD_C` | `CCD_C` | 0.0 | Registered only with `--ybs-gamma`. |
-| `CAMD_C` | `CAMD_C` | 0.0 | Momentum-damping coefficient `c_M`; registered only with `--ybs-momentum`. |
+| `BSSN_CFL_FACTOR` | `CFL_FACTOR` | 0.25 | Registered with CAHD or `--camd`; shares the host time-step read. |
+| `CCD_C` | `CCD_C` | 0.0 | Registered only with `--ccd`. |
+| `CAMD_C` | `CAMD_C` | 0.0 | Momentum-damping coefficient `c_M`; registered only with `--camd`. |
 | `kappa1`, `kappa2` | `kappa1`, `kappa2` | 0.1, 0.0 | fCCZ4 Z4 damping coefficients; fCCZ4 only. |
 
 A coefficient written under its CodeParameter name when the table lists a

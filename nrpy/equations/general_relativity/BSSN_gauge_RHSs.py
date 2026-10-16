@@ -36,7 +36,7 @@ def BSSN_gauge_RHSs(
     enable_T4munu: bool = False,
     LapseEvolutionOption: str = "OnePlusLog",
     ShiftEvolutionOption: str = "GammaDriving2ndOrder_Covariant",
-    enable_YBS_Gamma_constraint_adjustment: bool = False,
+    enable_CCD: bool = False,
     evolved_connection_rhsU: Optional[List[sp.Expr]] = None,
 ) -> Tuple[sp.Expr, List[sp.Expr], List[sp.Expr]]:
     """
@@ -47,7 +47,7 @@ def BSSN_gauge_RHSs(
     :param enable_T4munu: Whether to enable T4munu (stress-energy terms), defaults to False.
     :param LapseEvolutionOption: Specifies the lapse condition to use.
     :param ShiftEvolutionOption: Specifies the shift condition to use.
-    :param enable_YBS_Gamma_constraint_adjustment: Whether to enable the YBS Gamma-constraint adjustment.
+    :param enable_CCD: Whether to enable the YBS Gamma-constraint adjustment.
     :param evolved_connection_rhsU: Connection RHS used by derivative-based
         shift conditions; defaults to the complete BSSN connection RHS.
 
@@ -109,7 +109,7 @@ def BSSN_gauge_RHSs(
         CoordSystem
         + ("_rfm_precompute" if enable_rfm_precompute else "")
         + ("_T4munu" if enable_T4munu else ""),
-        enable_YBS_Gamma_constraint_adjustment=enable_YBS_Gamma_constraint_adjustment,
+        enable_CCD=enable_CCD,
     )
     if evolved_connection_rhsU is None:
         evolved_connection_rhsU = Brhs.Lambdabar_rhsU
