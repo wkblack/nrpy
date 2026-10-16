@@ -290,6 +290,9 @@ class BSSNRHSs:
         for i in range(3):
             self.Lambdabar_rhsU[i] += sp.Rational(2, 3) * DGammaU[i] * Dbarbetacontraction  # Term 3
 
+        # Connection-constraint damping (CCD): -CCD_C (Lambdabar^i - Delta^i) Dbar_j beta^j.
+        # In Yo--Baumgarte--Shapiro 2002 (gr-qc/0209066), Eq. 45, chi = CCD_C.
+        # CCD_C = 0 is the baseline above; CCD_C = -2/3 restores \frac{2}{3} \bar{\Lambda}^{i} \bar{D}_{j} \beta^{j}.
         if enable_YBS_Gamma_constraint_adjustment:
             CCD_C = sp.Symbol("CCD_C", real=True)
             for i in range(3):
