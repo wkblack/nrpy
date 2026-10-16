@@ -1,4 +1,4 @@
-# YBS-MOM Timestep-Scaled Momentum Adjustment
+# CAMD (YBS-MOM) Momentum-Constraint Adjustment
 
 > Status: confirmed
 > Up: [General Relativity](index.md)
@@ -41,7 +41,7 @@ the coefficient; it is 1 far from black holes and vanishes at a puncture (see
 `CAMD_C` is 0.0625, which equals the former `C_YBS_mom = 1` at
 `CFL_FACTOR = 0.25` through `CAMD_C = C_YBS_mom * CFL_FACTOR^2`; its range is
 given under [Strength and timestep bound](#strength-and-timestep-bound). This is
-timestep-scaled, `W`-weighted parabolic damping; it does not change the PDE
+local-Courant-time-scaled, `W`-weighted parabolic damping; it does not change the PDE
 into a hyperbolic relaxation system.
 
 Claim evidence:

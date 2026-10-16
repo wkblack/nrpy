@@ -76,7 +76,7 @@ initial-data path, boundary path, or KO route is added.
 RHS registration, and registers and schedules one generic local-spacing helper
 when either CAHD or YBS-MOM is enabled. CAHD consumes that same raw spacing in
 its RHS coefficient. The continuum equations and validation limits remain
-owned by [YBS-MOM Timestep-Scaled Momentum Adjustment](../../equations/general-relativity/ybs-momentum-damping.md).
+owned by [CAMD (YBS-MOM) Momentum-Constraint Adjustment](../../equations/general-relativity/ybs-momentum-damping.md).
 
 Claim evidence:
 - Claim: `register_CFunction_rhs_eval` exposes an independent default-false YBS-MOM option for BSSN or fCCZ4, conditionally owns shared raw `DSMINGF` and `CAMD_C` (default 0), changes existing `a_rhsDD` expressions without new evolved state, and shares one local-spacing helper with CAHD in the black-hole spectroscopy example.
@@ -372,7 +372,7 @@ does not remove `m=+l` cases from emitted BHaH C.
 
 - Parent: [BHaH](index.md)
 - Depends on: [BSSN Family](../../equations/general-relativity/bssn-family.md)
-- Depends on: [YBS-MOM Timestep-Scaled Momentum Adjustment](../../equations/general-relativity/ybs-momentum-damping.md)
+- Depends on: [CAMD (YBS-MOM) Momentum-Constraint Adjustment](../../equations/general-relativity/ybs-momentum-damping.md)
 - Depends on: [Initial Data](../../equations/general-relativity/initial-data.md)
 - Depends on: [Metric Conversions And Matter](../../equations/general-relativity/metric-conversions-and-matter.md)
 - Depends on: [Psi4 And Tetrads](../../equations/general-relativity/psi4-and-tetrads.md)

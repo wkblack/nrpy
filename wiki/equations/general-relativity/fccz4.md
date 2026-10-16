@@ -746,7 +746,7 @@ Claim evidence:
 
 - Parent: [General Relativity](index.md)
 - Depends on: [BSSN Family](bssn-family.md)
-- Depends on: [YBS-MOM Timestep-Scaled Momentum Adjustment](ybs-momentum-damping.md)
+- Depends on: [CAMD (YBS-MOM) Momentum-Constraint Adjustment](ybs-momentum-damping.md)
 - Depends on: [Reference Metrics](../../core/reference-metrics.md)
 - Validated by: [Trusted Expression Pipeline](../trusted-expression-pipeline.md)
 - See also: [Metric Conversions And Matter](metric-conversions-and-matter.md)

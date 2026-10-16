@@ -323,7 +323,7 @@ corresponding trusted files.
 
 - [General Relativity](index.md)
 - [Equations](../index.md)
-- [YBS-MOM Timestep-Scaled Momentum Adjustment](ybs-momentum-damping.md)
+- [CAMD (YBS-MOM) Momentum-Constraint Adjustment](ybs-momentum-damping.md)
 - [Fully Covariant Conformal Z4](fccz4.md)
 - [Metric Conversions And Matter](metric-conversions-and-matter.md)
 - [Initial Data](initial-data.md)
