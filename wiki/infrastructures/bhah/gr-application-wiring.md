@@ -21,8 +21,8 @@ and cleanup.
 ## Detail
 
 `register_CFunction_rhs_eval(..., enable_fCCZ4=False,
-enable_YBS_Gamma_constraint_adjustment=False,
-enable_YBS_momentum_constraint_adjustment=False)` generates the shared RHS
+enable_CCD=False,
+enable_CAMD=False)` generates the shared RHS
 CFunction and preserves BSSN as the public default. The fCCZ4 opt-in branch pulls
 non-gauge expressions from `fCCZ4_RHSs.get_rhs(...)` and gauge expressions from
 `fCCZ4_gauge_RHSs`; the default branch keeps `BSSN_RHSs[...]` and
@@ -62,9 +62,9 @@ Claim evidence:
 - Claim: the shared registrar conditionally owns the runtime YBS parameter, whose default is 0, and forwards the opt-in flag to the selected BSSN or fCCZ4 equation and gauge owners; `two_blackholes_collide.py`, `blackhole_spectroscopy.py`, `superB_two_blackholes_collide.py`, and `superB_blackhole_spectroscopy.py` keep it explicitly false by default and share this registrar.
 - Role: descriptive behavior
 - Deciding authority: [rhs_eval.py](../../../nrpy/infrastructures/BHaH/general_relativity/rhs_eval.py), `register_CFunction_rhs_eval`
-- Corroboration: [two_blackholes_collide.py](../../../nrpy/examples/two_blackholes_collide.py), [blackhole_spectroscopy.py](../../../nrpy/examples/blackhole_spectroscopy.py), [superB_two_blackholes_collide.py](../../../nrpy/examples/superB_two_blackholes_collide.py), and [superB_blackhole_spectroscopy.py](../../../nrpy/examples/superB_blackhole_spectroscopy.py), forwarded `enable_YBS_Gamma_constraint_adjustment` constants
+- Corroboration: [two_blackholes_collide.py](../../../nrpy/examples/two_blackholes_collide.py), [blackhole_spectroscopy.py](../../../nrpy/examples/blackhole_spectroscopy.py), [superB_two_blackholes_collide.py](../../../nrpy/examples/superB_two_blackholes_collide.py), and [superB_blackhole_spectroscopy.py](../../../nrpy/examples/superB_blackhole_spectroscopy.py), forwarded `enable_CCD` constants
 
-The separate `enable_YBS_momentum_constraint_adjustment` option controls the
+The separate `enable_CAMD` option controls the
 default-disabled timestep-scaled, `W`-weighted momentum adjustment for either
 formulation. When enabled, the registrar adds the shared raw-spacing `DSMINGF`
 auxiliary gridfunction and runtime `CAMD_C` parameter (default 0, which

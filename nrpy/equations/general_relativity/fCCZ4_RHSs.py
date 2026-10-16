@@ -38,8 +38,8 @@ class FCCZ4RHSs:
         enable_rfm_precompute: bool = False,
         enable_RbarDD_gridfunctions: bool = False,
         enable_T4munu: bool = False,
-        enable_YBS_Gamma_constraint_adjustment: bool = False,
-        enable_YBS_momentum_constraint_adjustment: bool = False,
+        enable_CCD: bool = False,
+        enable_CAMD: bool = False,
     ) -> None:
         """
         Build fCCZ4 expressions for one reference-metric configuration.
@@ -50,9 +50,9 @@ class FCCZ4RHSs:
             Ricci components, with ``lambdaU`` interpreted as
             ``LambdatildeU``, from auxiliary gridfunctions.
         :param enable_T4munu: Include stress-energy source terms.
-        :param enable_YBS_Gamma_constraint_adjustment: Enable the YBS
+        :param enable_CCD: Enable the YBS
             connection-constraint adjustment.
-        :param enable_YBS_momentum_constraint_adjustment: Enable the
+        :param enable_CAMD: Enable the
             Yo--Lin--Cao momentum-constraint adjustment.
         :raises ValueError: If existing ``Theta_fCCZ4`` storage is not evolved
             state or, for BHaH, is not backed by ``in_gfs``.
@@ -77,12 +77,8 @@ class FCCZ4RHSs:
         Bq = BSSN_quantities[suffix]
         Brhs = BSSN_RHSs.get_rhs(
             suffix + ("_T4munu" if enable_T4munu else ""),
-            enable_YBS_Gamma_constraint_adjustment=(
-                enable_YBS_Gamma_constraint_adjustment
-            ),
-            enable_YBS_momentum_constraint_adjustment=(
-                enable_YBS_momentum_constraint_adjustment
-            ),
+            enable_CCD=(enable_CCD),
+            enable_CAMD=(enable_CAMD),
         )
 
         # Register damping coefficients only while constructing equations.  In
@@ -250,16 +246,16 @@ class FCCZ4RHSsDict(Dict[str, FCCZ4RHSs]):
         self,
         CoordSystem_in: str,
         *,
-        enable_YBS_Gamma_constraint_adjustment: bool = False,
-        enable_YBS_momentum_constraint_adjustment: bool = False,
+        enable_CCD: bool = False,
+        enable_CAMD: bool = False,
     ) -> FCCZ4RHSs:
         """
         Return cached expressions for an unchanged key and YBS choice.
 
         :param CoordSystem_in: Coordinate-system and option cache key.
-        :param enable_YBS_Gamma_constraint_adjustment: Enable the YBS
+        :param enable_CCD: Enable the YBS
             connection-constraint adjustment.
-        :param enable_YBS_momentum_constraint_adjustment: Enable the
+        :param enable_CAMD: Enable the
             Yo--Lin--Cao momentum-constraint adjustment.
         :return: Cached or newly built fCCZ4 expressions.
         """
@@ -269,13 +265,10 @@ class FCCZ4RHSsDict(Dict[str, FCCZ4RHSs]):
         )
         adjustment_key = (
             CoordSystem_in,
-            enable_YBS_Gamma_constraint_adjustment,
-            enable_YBS_momentum_constraint_adjustment,
+            enable_CCD,
+            enable_CAMD,
         )
-        adjustments_enabled = (
-            enable_YBS_Gamma_constraint_adjustment
-            or enable_YBS_momentum_constraint_adjustment
-        )
+        adjustments_enabled = enable_CCD or enable_CAMD
         rebuild = (
             adjustment_key not in self._YBS_adjustment_cache
             or self._YBS_adjustment_construction_parameters.get(adjustment_key)
@@ -297,12 +290,8 @@ class FCCZ4RHSsDict(Dict[str, FCCZ4RHSs]):
                 enable_rfm_precompute="_rfm_precompute" in CoordSystem_in,
                 enable_RbarDD_gridfunctions=("_RbarDD_gridfunctions" in CoordSystem_in),
                 enable_T4munu="_T4munu" in CoordSystem_in,
-                enable_YBS_Gamma_constraint_adjustment=(
-                    enable_YBS_Gamma_constraint_adjustment
-                ),
-                enable_YBS_momentum_constraint_adjustment=(
-                    enable_YBS_momentum_constraint_adjustment
-                ),
+                enable_CCD=(enable_CCD),
+                enable_CAMD=(enable_CAMD),
             )
             if adjustments_enabled:
                 self._YBS_adjustment_cache[adjustment_key] = rhs
@@ -407,8 +396,8 @@ if __name__ == "__main__":
             enable_rfm_precompute=case_enable_rfm_precompute,
             enable_RbarDD_gridfunctions=case_enable_RbarDD_gridfunctions,
             enable_T4munu=case_enable_T4munu,
-            enable_YBS_Gamma_constraint_adjustment=True,
-            enable_YBS_momentum_constraint_adjustment=True,
+            enable_CCD=True,
+            enable_CAMD=True,
         )
         processed = ve.process_dictionary_of_expressions(
             rhs.fCCZ4_RHSs_varname_to_expr_dict, fixed_mpfs_for_free_symbols=True

@@ -26,7 +26,7 @@ iteration cap, and uses native scaling with base output frequencies of 80. The
 copied q1 file is identical in the BSSN and fCCZ4 directories; each executable
 constructs its own evolved fields from the same physical initial data.
 
-The independent `--ybs-gamma` and `--ybs-momentum` options, runtime
+The independent `--ccd` and `--camd` options, runtime
 coefficients, paper references, and in-script KO setting are described in
 [BSSN Application Wiring](bssn-application-wiring.md#optional-yo-et-al-adjustments).
 The fCCZ4 shift driver receives the adjusted fCCZ4 connection RHS.

@@ -32,8 +32,8 @@ class BSSNRHSs:
         enable_rfm_precompute: bool = False,
         enable_RbarDD_gridfunctions: bool = False,
         enable_T4munu: bool = False,
-        enable_YBS_Gamma_constraint_adjustment: bool = False,
-        enable_YBS_momentum_constraint_adjustment: bool = False,
+        enable_CCD: bool = False,
+        enable_CAMD: bool = False,
     ):
         """
         Initialize and set up all BSSN quantities, storing them within the class object.
@@ -42,8 +42,8 @@ class BSSNRHSs:
         :param enable_rfm_precompute: Whether to enable reference-metric precomputation, defaults to False.
         :param enable_RbarDD_gridfunctions: Whether to enable RbarDD gridfunctions, defaults to False.
         :param enable_T4munu: Whether to enable T4munu (stress-energy terms), defaults to False.
-        :param enable_YBS_Gamma_constraint_adjustment: Whether to enable the YBS Gamma-constraint adjustment.
-        :param enable_YBS_momentum_constraint_adjustment: Whether to enable the
+        :param enable_CCD: Whether to enable the YBS Gamma-constraint adjustment.
+        :param enable_CAMD: Whether to enable the
             Yo--Lin--Cao momentum-constraint adjustment, whose coefficient
             CAMD_C * dsmin / CFL_FACTOR is multiplied by the conformal factor W.
 
@@ -293,7 +293,7 @@ class BSSNRHSs:
         # Connection-constraint damping (CCD): -CCD_C (Lambdabar^i - Delta^i) Dbar_j beta^j.
         # In Yo--Baumgarte--Shapiro 2002 (gr-qc/0209066), Eq. 45, chi = CCD_C.
         # CCD_C = 0 is the baseline above; CCD_C = -2/3 restores \frac{2}{3} \bar{\Lambda}^{i} \bar{D}_{j} \beta^{j}.
-        if enable_YBS_Gamma_constraint_adjustment:
+        if enable_CCD:
             CCD_C = sp.Symbol("CCD_C", real=True)
             for i in range(3):
                 self.Lambdabar_rhsU[i] += (
@@ -360,7 +360,7 @@ class BSSNRHSs:
                 for j in range(3):
                     Abar_rhsDD[i][j] += sourceterm_Abar_rhsDD[i][j]
 
-        if enable_YBS_momentum_constraint_adjustment:
+        if enable_CAMD:
             # Lower-index vacuum momentum residual:
             # M_i = Dbar_j Abar^j_i + 6 Abar^j_i phi_,j - 2 K_,i / 3.
             AbarDD_dD = Bq.AbarDD_dD
@@ -675,16 +675,16 @@ class BSSNRHSs_dict(Dict[str, BSSNRHSs]):
         self,
         CoordSystem_in: str,
         *,
-        enable_YBS_Gamma_constraint_adjustment: bool = False,
-        enable_YBS_momentum_constraint_adjustment: bool = False,
+        enable_CCD: bool = False,
+        enable_CAMD: bool = False,
     ) -> BSSNRHSs:
         """
         Return cached RHSs for an unchanged coordinate/options key and YBS choice.
 
         :param CoordSystem_in: Coordinate-system and option cache key.
-        :param enable_YBS_Gamma_constraint_adjustment: Whether to enable the YBS
+        :param enable_CCD: Whether to enable the YBS
             Gamma-constraint adjustment.
-        :param enable_YBS_momentum_constraint_adjustment: Whether to enable the
+        :param enable_CAMD: Whether to enable the
             Yo--Lin--Cao momentum-constraint adjustment.
         :return: Cached or newly built BSSN right-hand sides.
         """
@@ -694,13 +694,10 @@ class BSSNRHSs_dict(Dict[str, BSSNRHSs]):
         )
         adjustment_key = (
             CoordSystem_in,
-            enable_YBS_Gamma_constraint_adjustment,
-            enable_YBS_momentum_constraint_adjustment,
+            enable_CCD,
+            enable_CAMD,
         )
-        adjustments_enabled = (
-            enable_YBS_Gamma_constraint_adjustment
-            or enable_YBS_momentum_constraint_adjustment
-        )
+        adjustments_enabled = enable_CCD or enable_CAMD
         rebuild = (
             adjustment_key not in self._YBS_adjustment_cache
             or self._YBS_adjustment_construction_parameters.get(adjustment_key)
@@ -727,8 +724,8 @@ class BSSNRHSs_dict(Dict[str, BSSNRHSs]):
                 enable_T4munu=enable_T4munu,
                 enable_rfm_precompute=enable_rfm_precompute,
                 enable_RbarDD_gridfunctions=enable_RbarDD_gridfunctions,
-                enable_YBS_Gamma_constraint_adjustment=enable_YBS_Gamma_constraint_adjustment,
-                enable_YBS_momentum_constraint_adjustment=enable_YBS_momentum_constraint_adjustment,
+                enable_CCD=enable_CCD,
+                enable_CAMD=enable_CAMD,
             )
             if adjustments_enabled:
                 self._YBS_adjustment_cache[adjustment_key] = rhs
@@ -794,8 +791,8 @@ if __name__ == "__main__":
     ]:
         brhs = BSSN_RHSs.get_rhs(
             Coord + "_T4munu",
-            enable_YBS_Gamma_constraint_adjustment=True,
-            enable_YBS_momentum_constraint_adjustment=True,
+            enable_CCD=True,
+            enable_CAMD=True,
         )
         results_dict = ve.process_dictionary_of_expressions(
             brhs.__dict__, fixed_mpfs_for_free_symbols=True

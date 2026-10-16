@@ -114,6 +114,8 @@ def generate_default_parfile(
                 f"No TOML mapping for {name!r} with type "
                 f"{code_parameter.cparam_type!r}."
             )
+        if code_parameter.description:
+            lines.append(f"# {code_parameter.description}")
         lines.append(f"{q1_name} = {literal}")
         emitted_keys.add(q1_name)
     lines.append("")

@@ -151,7 +151,7 @@ Claim evidence:
 
 ### Opt-in YBS Gamma-constraint adjustment
 
-`BSSNRHSs(..., enable_YBS_Gamma_constraint_adjustment=True)` adds
+`BSSNRHSs(..., enable_CCD=True)` adds
 
 ```text
 -CCD_C * (LambdabarU[i] - DGammaU[i]) * Dbarbetacontraction

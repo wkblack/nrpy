@@ -49,8 +49,8 @@ args = parser.parse_args()
 # Code-generation-time parameters:
 fp_type = args.floating_point_precision.lower()
 enable_fCCZ4 = args.fccz4
-enable_YBS_Gamma_constraint_adjustment = False
-enable_YBS_momentum_constraint_adjustment = False
+enable_CCD = False
+enable_CAMD = False
 # Default to openmp; override with cuda if --cuda is set
 parallelization = "cuda" if args.cuda else "openmp"
 if parallelization not in ["openmp", "cuda"]:
@@ -328,10 +328,8 @@ BHaH.general_relativity.rhs_eval.register_CFunction_rhs_eval(
     enable_CAHD=enable_CAHD,
     enable_SSL=enable_SSL,
     enable_fCCZ4=enable_fCCZ4,
-    enable_YBS_Gamma_constraint_adjustment=enable_YBS_Gamma_constraint_adjustment,
-    enable_YBS_momentum_constraint_adjustment=(
-        enable_YBS_momentum_constraint_adjustment
-    ),
+    enable_CCD=enable_CCD,
+    enable_CAMD=(enable_CAMD),
     OMP_collapse=OMP_collapse,
     enable_cfdD_alphadD_vetUdD_gridfunctions=enable_cfdD_alphadD_vetUdD_gridfunctions_for_GPU,
     enable_cpu_tiling=enable_rhs_eval_with_Ricci,
@@ -343,7 +341,7 @@ if enable_cfdD_alphadD_vetUdD_gridfunctions_for_GPU:
         enable_fd_functions=enable_fd_functions,
         OMP_collapse=OMP_collapse,
     )
-if enable_CAHD or enable_YBS_momentum_constraint_adjustment:
+if enable_CAHD or enable_CAMD:
     BHaH.general_relativity.dsmin_gf.register_CFunction_dsmin_auxevol_gridfunction(
         {CoordSystem}
     )
@@ -586,7 +584,7 @@ BHaH.BHaH_defines_h.output_BHaH_defines_h(
     restrict_pointer_type="*" if parallelization == "cuda" else "*restrict",
 )
 post_non_y_n_auxevol_mallocs = ""
-if enable_CAHD or enable_YBS_momentum_constraint_adjustment:
+if enable_CAHD or enable_CAMD:
     post_non_y_n_auxevol_mallocs = """for(int grid=0; grid<commondata.NUMGRIDS; grid++) {
     dsmin_auxevol_gridfunction(&griddata[grid].params, griddata[grid].xx, griddata[grid].gridfuncs.auxevol_gfs);
 }\n""".replace(

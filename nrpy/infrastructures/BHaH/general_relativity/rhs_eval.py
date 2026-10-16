@@ -62,8 +62,8 @@ def register_CFunction_rhs_eval(
     OMP_collapse: int = 1,
     validate_expressions: bool = False,
     enable_fCCZ4: bool = False,
-    enable_YBS_Gamma_constraint_adjustment: bool = False,
-    enable_YBS_momentum_constraint_adjustment: bool = False,
+    enable_CCD: bool = False,
+    enable_CAMD: bool = False,
     enable_cfdD_alphadD_vetUdD_gridfunctions: bool = False,
     enable_cpu_tiling: bool = False,
 ) -> Union[None, Dict[str, Union[mpf, mpc]], pcg.NRPyEnv_type]:
@@ -87,9 +87,9 @@ def register_CFunction_rhs_eval(
     :param OMP_collapse: Degree of OpenMP loop collapsing.
     :param validate_expressions: Whether to validate generated sympy expressions against trusted values.
     :param enable_fCCZ4: Use fCCZ4 instead of BSSN evolution equations.
-    :param enable_YBS_Gamma_constraint_adjustment: Enable the YBS connection-constraint
+    :param enable_CCD: Enable the YBS connection-constraint
         adjustment (CCD) and register the runtime parameter CCD_C, whose default 0 disables it.
-    :param enable_YBS_momentum_constraint_adjustment: Enable the W-weighted
+    :param enable_CAMD: Enable the W-weighted
         Yo--Lin--Cao momentum-constraint adjustment (CAMD) and register the runtime
         parameter CAMD_C, whose default 0 disables it and whose recommended value is 0.0625.
     :param enable_cfdD_alphadD_vetUdD_gridfunctions: Whether to read the first derivatives of
@@ -161,7 +161,7 @@ def register_CFunction_rhs_eval(
         + ("_RbarDD_gridfunctions" if enable_RbarDD_gridfunctions else "")
         + ("_T4munu" if enable_T4munu else "")
     )
-    if enable_YBS_Gamma_constraint_adjustment:
+    if enable_CCD:
         par.register_CodeParameter(
             "REAL",
             __name__,
@@ -177,14 +177,14 @@ def register_CFunction_rhs_eval(
                 "derived, and negative values should not be used."
             ),
         )
-    if enable_CAHD or enable_YBS_momentum_constraint_adjustment:
+    if enable_CAHD or enable_CAMD:
         if "dsmin" not in gri.glb_gridfcs_dict:
             _ = gri.register_gridfunctions(
                 "dsmin",
                 group="AUXEVOL",
                 gf_array_name="auxevol_gfs",
             )
-    if enable_YBS_momentum_constraint_adjustment:
+    if enable_CAMD:
         par.register_CodeParameter(
             "REAL",
             __name__,
@@ -217,12 +217,8 @@ def register_CFunction_rhs_eval(
             enable_CAKO=enable_CAKO,
             enable_CAHD=enable_CAHD,
             enable_SSL=enable_SSL,
-            enable_YBS_Gamma_constraint_adjustment=(
-                enable_YBS_Gamma_constraint_adjustment
-            ),
-            enable_YBS_momentum_constraint_adjustment=(
-                enable_YBS_momentum_constraint_adjustment
-            ),
+            enable_CCD=(enable_CCD),
+            enable_CAMD=(enable_CAMD),
         )
         local_RHSs_varname_to_expr_dict = ODict(fccz4_bundle.rhs_by_symbol_name)
         betaU = list(fccz4_bundle.upwind_control_vec)
@@ -239,8 +235,8 @@ def register_CFunction_rhs_eval(
         # dictionaries in nrpy/infrastructures/BHaH/general_relativity/tests/.
         bssn_rhs = BSSN_RHSs.get_rhs(
             rhs_cache_key,
-            enable_YBS_Gamma_constraint_adjustment=enable_YBS_Gamma_constraint_adjustment,
-            enable_YBS_momentum_constraint_adjustment=enable_YBS_momentum_constraint_adjustment,
+            enable_CCD=enable_CCD,
+            enable_CAMD=enable_CAMD,
         )
         local_RHSs_varname_to_expr_dict = ODict(
             bssn_rhs.BSSN_RHSs_varname_to_expr_dict.copy()
@@ -251,7 +247,7 @@ def register_CFunction_rhs_eval(
             enable_T4munu=enable_T4munu,
             LapseEvolutionOption=LapseEvolutionOption,
             ShiftEvolutionOption=ShiftEvolutionOption,
-            enable_YBS_Gamma_constraint_adjustment=enable_YBS_Gamma_constraint_adjustment,
+            enable_CCD=enable_CCD,
         )
 
         # Keep cached nongauge RHS dictionaries immutable: gauge and optional
@@ -411,9 +407,7 @@ def register_CFunction_rhs_eval(
     param_symbols, commondata_symbols = get_params_commondata_symbols_from_expr_list(
         expr_list, exclude=[f"xx{j}" for j in range(3)]
     )
-    if (
-        enable_CAHD or enable_YBS_momentum_constraint_adjustment
-    ) and "CFL_FACTOR" not in commondata_symbols:
+    if (enable_CAHD or enable_CAMD) and "CFL_FACTOR" not in commondata_symbols:
         commondata_symbols.append("CFL_FACTOR")
         commondata_symbols.sort()
 
@@ -623,8 +617,8 @@ if __name__ == "__main__":
                     enable_CAKO=enable_Improvements,
                     enable_CAHD=enable_Improvements,
                     enable_SSL=enable_Improvements,
-                    enable_YBS_Gamma_constraint_adjustment=True,
-                    enable_YBS_momentum_constraint_adjustment=True,
+                    enable_CCD=True,
+                    enable_CAMD=True,
                     validate_expressions=True,
                 )
                 ve.compare_or_generate_trusted_results(

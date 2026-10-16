@@ -20,7 +20,7 @@ def fCCZ4_gauge_RHSs(
     enable_T4munu: bool = False,
     LapseEvolutionOption: str = "OnePlusLog",
     ShiftEvolutionOption: str = "GammaDriving2ndOrder_Covariant__Hatted",
-    enable_YBS_Gamma_constraint_adjustment: bool = False,
+    enable_CCD: bool = False,
 ) -> Tuple[sp.Expr, List[sp.Expr], List[sp.Expr]]:
     """
     Build supported fCCZ4 moving-puncture gauge equations.
@@ -32,7 +32,7 @@ def fCCZ4_gauge_RHSs(
         ``BSSN_gauge_RHSs``.
     :param ShiftEvolutionOption: Any shift condition supported by
         ``BSSN_gauge_RHSs``.
-    :param enable_YBS_Gamma_constraint_adjustment: Enable the YBS
+    :param enable_CCD: Enable the YBS
         connection-constraint adjustment.
     :return: Lapse RHS and rescaled shift and driver RHS vectors.
 
@@ -40,7 +40,7 @@ def fCCZ4_gauge_RHSs(
     suffix = CoordSystem + ("_rfm_precompute" if enable_rfm_precompute else "")
     rhs = fCCZ4_RHSs.get_rhs(
         suffix + ("_T4munu" if enable_T4munu else ""),
-        enable_YBS_Gamma_constraint_adjustment=(enable_YBS_Gamma_constraint_adjustment),
+        enable_CCD=(enable_CCD),
     )
     alpha_rhs, vet_rhsU, bet_rhsU = BSSN_gauge_RHSs(
         CoordSystem=CoordSystem,
@@ -48,7 +48,7 @@ def fCCZ4_gauge_RHSs(
         enable_T4munu=enable_T4munu,
         LapseEvolutionOption=LapseEvolutionOption,
         ShiftEvolutionOption=ShiftEvolutionOption,
-        enable_YBS_Gamma_constraint_adjustment=(enable_YBS_Gamma_constraint_adjustment),
+        enable_CCD=(enable_CCD),
         evolved_connection_rhsU=rhs.Lambdatilde_rhsU,
     )
     Bq = BSSN_quantities[suffix]

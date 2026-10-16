@@ -72,8 +72,8 @@ def build_fccz4_expression_bundle(
     enable_CAKO: bool = False,
     enable_CAHD: bool = False,
     enable_SSL: bool = False,
-    enable_YBS_Gamma_constraint_adjustment: bool = False,
-    enable_YBS_momentum_constraint_adjustment: bool = False,
+    enable_CCD: bool = False,
+    enable_CAMD: bool = False,
     enable_diagnostics: bool = False,
 ) -> FCCZ4ExpressionBundle:
     """
@@ -101,9 +101,9 @@ def build_fccz4_expression_bundle(
     :param enable_CAKO: Multiply KO strengths by the conformal factor W.
     :param enable_CAHD: Enable coarse-grid-adjusted Hamiltonian-constraint damping.
     :param enable_SSL: Enable slow-start lapse.
-    :param enable_YBS_Gamma_constraint_adjustment: Enable the YBS
+    :param enable_CCD: Enable the YBS
         connection-constraint adjustment.
-    :param enable_YBS_momentum_constraint_adjustment: Enable the
+    :param enable_CAMD: Enable the
         Yo--Lin--Cao momentum-constraint adjustment.
     :param enable_diagnostics: Also build the constraint diagnostics
         (``H_Z4`` and ``Z4constraintU0..2``).  Off by default: constructing
@@ -184,10 +184,8 @@ def build_fccz4_expression_bundle(
     # terms; gauge and optional KO/CAHD/SSL terms are added only to this set.
     fccz4_rhs = fCCZ4_RHSs.get_rhs(
         rhs_cache_key,
-        enable_YBS_Gamma_constraint_adjustment=(enable_YBS_Gamma_constraint_adjustment),
-        enable_YBS_momentum_constraint_adjustment=(
-            enable_YBS_momentum_constraint_adjustment
-        ),
+        enable_CCD=(enable_CCD),
+        enable_CAMD=(enable_CAMD),
     )
     local_RHSs_varname_to_expr_dict = fccz4_rhs.fCCZ4_RHSs_varname_to_expr_dict.copy()
 
@@ -198,7 +196,7 @@ def build_fccz4_expression_bundle(
         enable_T4munu=enable_T4munu,
         LapseEvolutionOption=LapseEvolutionOption,
         ShiftEvolutionOption=ShiftEvolutionOption,
-        enable_YBS_Gamma_constraint_adjustment=(enable_YBS_Gamma_constraint_adjustment),
+        enable_CCD=(enable_CCD),
     )
     local_RHSs_varname_to_expr_dict["alpha_rhs"] = alpha_rhs
     for i in range(3):

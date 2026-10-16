@@ -398,7 +398,7 @@ The connection RHS adds `deltaLambda^i` before vector rescaling.
 When matter is enabled, the base BSSN source terms and the canonical `H_Z4`
 matter term use the established `T4munu` source helpers.
 
-With `enable_YBS_Gamma_constraint_adjustment=True`, `FCCZ4RHSs` requests the
+With `enable_CCD=True`, `FCCZ4RHSs` requests the
 already adjusted BSSN base instead of defining another symbolic term. Because
 the reused connection slot stores `LambdatildeU`, the shared addition becomes
 

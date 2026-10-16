@@ -226,7 +226,7 @@ Claim evidence:
 - Corroboration: [dendro_bssn.py](../../nrpy/examples/dendro_bssn.py) and [dendro_fccz4.py](../../nrpy/examples/dendro_fccz4.py), current command-line interface; [CMakeLists.py](../../nrpy/infrastructures/Dendro/CMakeLists.py), Dendrolib master and the selected toml11 release
 
 Claim evidence:
-- Claim: the helper's pass results cover only its CI profiles, eight-step or shorter evolutions, and Kreiss-Oliger-enabled generation; they are not evidence for long-time, merger, production-resolution, or Dendro generation with `enable_KreissOliger_dissipation = False`, with `--fd-order` 4 or 8, or with `--ybs-gamma` or `--ybs-momentum`, or for the packaged q1 parameter file and the printed run commands.
+- Claim: the helper's pass results cover only its CI profiles, eight-step or shorter evolutions, and Kreiss-Oliger-enabled generation; they are not evidence for long-time, merger, production-resolution, or Dendro generation with `enable_KreissOliger_dissipation = False`, with `--fd-order` 4 or 8, or with `--ccd` or `--camd`, or for the packaged q1 parameter file and the printed run commands.
 - Role: CI behavior
 - Deciding authority: [dendro_application_check.py](../../nrpy/examples/tests/dendro_application_check.py), `PROFILE_P`, `PROFILE_O`, `COMMON_OVERRIDES`, `Leg.generate_and_build`
 - Corroboration: [Production Validation And Deferred Checks](../infrastructures/dendro/production-validation-and-deferred-checks.md), `Detail`

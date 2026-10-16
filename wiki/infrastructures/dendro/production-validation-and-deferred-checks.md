@@ -137,8 +137,8 @@ printed digits of the output columns. A pass shows agreement within those
 thresholds, not an error bound for the evolution.
 
 The helper generates only with Kreiss-Oliger dissipation enabled (the example
-scripts set it), with `--fd-order 6`, and with neither `--ybs-gamma` nor
-`--ybs-momentum`. It evolves the generated `pars/<stem>.toml` with profile
+scripts set it), with `--fd-order 6`, and with neither `--ccd` nor
+`--camd`. It evolves the generated `pars/<stem>.toml` with profile
 overrides and never reads `pars/q1.par.lowres.toml` or runs the printed run
 commands, so the packaged q1 file is outside the CI evidence. Run-time orders 4
 and 8 are exercised only as `BSSN_ELE_ORDER` values of a binary generated at FD6;
@@ -146,7 +146,7 @@ generation with `--fd-order 4` or `8`, and with either Yo et al. option, is
 exercised by no job.
 
 Claim evidence:
-- Claim: `dendro-validation` configures the listed required application checks through `dendro_application_check.py`, covers the evolution and the scheduled remesh test through a stored-reference regression check, covers Lambda initialization through the stored step-0 constraint row and the algebraic projection through the checkpoint write-time and restore-time residual checks, covers halo exchange through rank-count agreement and block boundaries within a rank only through the numerical checks and the stored reference, and omits field-data inspection, the pointwise initial-lapse check, the temporary direct numerical comparisons, and native-control comparisons. Its stored-reference and checkpoint-residual comparisons are upper bounds where the stored value is at round-off level, and the helper derives none of its tolerances. The helper generates only with Kreiss-Oliger dissipation enabled, with `--fd-order 6`, and without `--ybs-gamma` or `--ybs-momentum`, and it never reads the packaged q1 parameter file or runs the printed commands.
+- Claim: `dendro-validation` configures the listed required application checks through `dendro_application_check.py`, covers the evolution and the scheduled remesh test through a stored-reference regression check, covers Lambda initialization through the stored step-0 constraint row and the algebraic projection through the checkpoint write-time and restore-time residual checks, covers halo exchange through rank-count agreement and block boundaries within a rank only through the numerical checks and the stored reference, and omits field-data inspection, the pointwise initial-lapse check, the temporary direct numerical comparisons, and native-control comparisons. Its stored-reference and checkpoint-residual comparisons are upper bounds where the stored value is at round-off level, and the helper derives none of its tolerances. The helper generates only with Kreiss-Oliger dissipation enabled, with `--fd-order 6`, and without `--ccd` or `--camd`, and it never reads the packaged q1 parameter file or runs the printed commands.
 - Role: CI behavior
 - Deciding authority: [dendro_application_check.py](../../../nrpy/examples/tests/dendro_application_check.py), `Leg.run_variant`, `Leg.check_run_a`, `Leg.check_reference`, `Leg.check_orders`, `Leg.compare_runs`, `Leg.run_negatives`; [main.yml](../../../.github/workflows/main.yml), `dendro-validation`; [dendro_bssn.py](../../../nrpy/examples/dendro_bssn.py) and [dendro_fccz4.py](../../../nrpy/examples/dendro_fccz4.py), `main` (Kreiss-Oliger enabled in the script); [checkpoint.py](../../../nrpy/infrastructures/Dendro/checkpoint.py), `output_checkpoint_cpp`, write-time and restore-time projection-residual checks
 - Corroboration: [Generated Project CI](../../validation/generated-project-ci.md), Dendro job description

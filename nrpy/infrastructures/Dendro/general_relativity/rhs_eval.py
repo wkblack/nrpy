@@ -53,8 +53,8 @@ def register_CFunction_rhs_eval(
     CoordSystem: str = "Cartesian",
     LapseEvolutionOption: str = "OnePlusLog",
     ShiftEvolutionOption: str = "GammaDriving2ndOrder_Covariant__Hatted",
-    enable_YBS_Gamma_constraint_adjustment: bool = False,
-    enable_YBS_momentum_constraint_adjustment: bool = False,
+    enable_CCD: bool = False,
+    enable_CAMD: bool = False,
     enable_SSL: bool = False,
     enable_CAHD: bool = False,
     enable_intrinsics: bool,
@@ -69,9 +69,9 @@ def register_CFunction_rhs_eval(
     :param CoordSystem: Reference-metric coordinate system.
     :param LapseEvolutionOption: Lapse gauge condition.
     :param ShiftEvolutionOption: Shift gauge condition.
-    :param enable_YBS_Gamma_constraint_adjustment: Add the Yo et al. Gamma-constraint
+    :param enable_CCD: Add the Yo et al. Gamma-constraint
         term (CCD) and register CCD_C, whose default 0 disables it.
-    :param enable_YBS_momentum_constraint_adjustment: Add Yo et al. momentum
+    :param enable_CAMD: Add Yo et al. momentum
         damping (CAMD) with coefficient CAMD_C times local spacing over CFL_FACTOR
         times the conformal factor W, and register CAMD_C, whose default 0
         disables it and whose recommended value is 0.0625.
@@ -110,7 +110,7 @@ def register_CFunction_rhs_eval(
         staged_coord_system = CoordSystem + "_RbarDD_gridfunctions"
         quantities = BSSN_quantities[staged_coord_system]
 
-        if enable_YBS_Gamma_constraint_adjustment:
+        if enable_CCD:
             par.register_CodeParameter(
                 "REAL",
                 __name__,
@@ -125,7 +125,7 @@ def register_CFunction_rhs_eval(
                     "derived, and negative values should not be used."
                 ),
             )
-        if enable_YBS_momentum_constraint_adjustment:
+        if enable_CAMD:
             par.register_CodeParameter(
                 "REAL",
                 __name__,
@@ -140,7 +140,7 @@ def register_CFunction_rhs_eval(
                     "c_M < 3 r_RK / (2 mu_max): about 0.230 for FD6 and 0.214 for FD8."
                 ),
             )
-        if enable_CAHD or enable_YBS_momentum_constraint_adjustment:
+        if enable_CAHD or enable_CAMD:
             par.register_CodeParameter(
                 "REAL",
                 __name__,
@@ -153,8 +153,8 @@ def register_CFunction_rhs_eval(
         if enable_fCCZ4:
             fccz4_rhs = fCCZ4_RHSs.get_rhs(
                 staged_coord_system,
-                enable_YBS_Gamma_constraint_adjustment=enable_YBS_Gamma_constraint_adjustment,
-                enable_YBS_momentum_constraint_adjustment=enable_YBS_momentum_constraint_adjustment,
+                enable_CCD=enable_CCD,
+                enable_CAMD=enable_CAMD,
             )
             rhs_by_symbol_name: Dict[str, sp.Expr] = OrderedDict(
                 sorted(fccz4_rhs.fCCZ4_RHSs_varname_to_expr_dict.items())
@@ -165,7 +165,7 @@ def register_CFunction_rhs_eval(
                 enable_T4munu=False,
                 LapseEvolutionOption=LapseEvolutionOption,
                 ShiftEvolutionOption=ShiftEvolutionOption,
-                enable_YBS_Gamma_constraint_adjustment=enable_YBS_Gamma_constraint_adjustment,
+                enable_CCD=enable_CCD,
                 evolved_connection_rhsU=fccz4_rhs.Lambdatilde_rhsU,
             )
             if LapseEvolutionOption == "OnePlusLog":
@@ -173,8 +173,8 @@ def register_CFunction_rhs_eval(
         else:
             bssn_rhs = BSSN_RHSs.get_rhs(
                 staged_coord_system,
-                enable_YBS_Gamma_constraint_adjustment=enable_YBS_Gamma_constraint_adjustment,
-                enable_YBS_momentum_constraint_adjustment=enable_YBS_momentum_constraint_adjustment,
+                enable_CCD=enable_CCD,
+                enable_CAMD=enable_CAMD,
             )
             rhs_by_symbol_name = OrderedDict(
                 sorted(bssn_rhs.BSSN_RHSs_varname_to_expr_dict.items())
@@ -185,7 +185,7 @@ def register_CFunction_rhs_eval(
                 enable_T4munu=False,
                 LapseEvolutionOption=LapseEvolutionOption,
                 ShiftEvolutionOption=ShiftEvolutionOption,
-                enable_YBS_Gamma_constraint_adjustment=enable_YBS_Gamma_constraint_adjustment,
+                enable_CCD=enable_CCD,
             )
 
         rhs_by_symbol_name["alpha_rhs"] = alpha_rhs
@@ -379,7 +379,7 @@ def register_CFunction_rhs_eval(
         )
         # Step 6: Emit the block preamble, pointer bindings, and point loop.
         # The CAHD and momentum-damping terms read the local spacing dsmin.
-        emit_dsmin = enable_CAHD or enable_YBS_momentum_constraint_adjustment
+        emit_dsmin = enable_CAHD or enable_CAMD
         geometry = rf"""const std::ptrdiff_t offset = static_cast<std::ptrdiff_t>(block.getOffset());
 const unsigned nx_block = block.getAllocationSzX();
 const unsigned ny_block = block.getAllocationSzY();
