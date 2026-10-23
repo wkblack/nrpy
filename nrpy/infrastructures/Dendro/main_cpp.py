@@ -954,10 +954,34 @@ int main(int argc, char** argv) {
         "BSSN_BH1", "V_Y", 0.11284523509709575));
     commondata.initial_p_r = std::abs(parameters.get<DendroScalar>(
         "BSSN_BH1", "V_X", -0.002284343811437988));
-    commondata.bbhxy_BH_m_chix = commondata.bbhxy_BH_m_chiy =
-        commondata.bbhxy_BH_m_chiz = 0.0;
-    commondata.bbhxy_BH_M_chix = commondata.bbhxy_BH_M_chiy =
-        commondata.bbhxy_BH_M_chiz = 0.0;
+    // TwoPunctures takes dimensionless spins chi = S/m^2 of the less (m)
+    // and more (M) massive hole, in native Cartesian components; each
+    // BSSN_BH entry gives S as a magnitude SPIN with direction SPIN_THETA,
+    // SPIN_PHI (radians), as in the puncture seed.
+    const auto black_hole_chi = [&](const std::string &black_hole,
+                                    const DendroScalar mass) {
+      const DendroScalar spin =
+          parameters.get<DendroScalar>(black_hole, "SPIN", 0.0);
+      const DendroScalar theta =
+          parameters.get<DendroScalar>(black_hole, "SPIN_THETA", 0.0);
+      const DendroScalar phi =
+          parameters.get<DendroScalar>(black_hole, "SPIN_PHI", 0.0);
+      const DendroScalar chi = spin / (mass * mass);
+      return std::array<DendroScalar, 3>{{chi * std::sin(theta) * std::cos(phi),
+                                          chi * std::sin(theta) * std::sin(phi),
+                                          chi * std::cos(theta)}};
+    }; // END LAMBDA: dimensionless spin vector of one hole
+    const bool black_hole_1_lighter = mass_1 <= mass_2;
+    const std::array<DendroScalar, 3> chi_m = black_hole_chi(
+        black_hole_1_lighter ? "BSSN_BH1" : "BSSN_BH2", std::min(mass_1, mass_2));
+    const std::array<DendroScalar, 3> chi_M = black_hole_chi(
+        black_hole_1_lighter ? "BSSN_BH2" : "BSSN_BH1", std::max(mass_1, mass_2));
+    commondata.bbhxy_BH_m_chix = chi_m[0];
+    commondata.bbhxy_BH_m_chiy = chi_m[1];
+    commondata.bbhxy_BH_m_chiz = chi_m[2];
+    commondata.bbhxy_BH_M_chix = chi_M[0];
+    commondata.bbhxy_BH_M_chiy = chi_M[1];
+    commondata.bbhxy_BH_M_chiz = chi_M[2];
     commondata.TP_npoints_A =
         parameters.get<int>("TPID_NPOINTS_A", 65);
     commondata.TP_npoints_B =
