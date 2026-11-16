@@ -39,7 +39,10 @@ Use these spellings when routing, citing, or writing leaves. Terms link to their
 | indexed expression | Tensor or vector array built with `nrpy.indexedexp`; see [Indexed Expressions](core/indexed-expressions.md). |
 | ADM | Arnowitt-Deser-Misner 3+1 spatial metric and extrinsic curvature quantities; see [Metric Conversions And Matter](equations/general-relativity/metric-conversions-and-matter.md). |
 | BSSN | Baumgarte-Shapiro-Shibata-Nakamura reference-metric evolution formulation; see [BSSN Family](equations/general-relativity/bssn-family.md). |
-| YBS-MOM | Opt-in Yo--Lin--Cao momentum-gradient term (`C_YBS_mom`, `W` weight, timestep-scaled); see [YBS-MOM Adjustment](equations/general-relativity/ybs-momentum-damping.md). |
+| YBS-MOM | Opt-in Yo--Lin--Cao momentum-gradient term (`CAMD_C`, `W` weight, timestep-scaled); see [YBS-MOM Adjustment](equations/general-relativity/ybs-momentum-damping.md). |
+| CAHD | Coarse-grid-adjusted Hamiltonian damping, with phi addition `-CAHD_C * dsmin / CFL_FACTOR * H`. |
+| CAMD | Coarse-grid-adjusted momentum damping, the W-weighted covariant STF momentum-gradient term with coefficient `CAMD_C`; see [CAMD](equations/general-relativity/ybs-momentum-damping.md). |
+| CCD | Connection-constraint damping, adding `-CCD_C C^i Dbar_j beta^j`; see [CCD](equations/general-relativity/ybs-gamma-constraint-adjustment.md). |
 | GRHD | General relativistic hydrodynamics conserved variables, fluxes, sources, speeds, and HLL helpers; see [GRHD](equations/grhd.md). |
 | TOV | Tolman-Oppenheimer-Volkoff stellar-equilibrium ODE system; see [TOV Equations](equations/tov-equations.md). |
 | Psi4 | Weyl gravitational-radiation scalar and tetrad construction modules; see [Psi4 And Tetrads](equations/general-relativity/psi4-and-tetrads.md). |

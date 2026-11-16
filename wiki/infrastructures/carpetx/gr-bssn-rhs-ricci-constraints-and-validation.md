@@ -87,11 +87,11 @@ RHS parameter metadata is passed through `ET_current_thorn_CodeParams_used`.
 The list always includes `eta` and `fd_order`; it includes either
 `diss_strength_gauge` plus `diss_strength_nongauge` when `enable_CAKO` is true,
 or `diss_strength` otherwise. It adds `SSL_h` and `SSL_sigma` only when
-`enable_SSL` is true, adds `C_CAHD` and
+`enable_SSL` is true, adds `CAHD_C` and
 `CFL_FACTOR__ignore_repeats_Carpet_timeref_factors` only when `enable_CAHD` is
 true, and adds `PI` for the `Baikal` thorn path.
 
-The CAHD preambles use `C_CAHD * CFL_FACTOR__ignore_repeats_Carpet_timeref_factors * dsmin`
+The CAHD preambles use `CAHD_C * dsmin / CFL_FACTOR__ignore_repeats_Carpet_timeref_factors`
 in scalar and SIMD code, where `dsmin` is the smallest `CCTK_DELTA_SPACE`
 component. The RHS registrar registers the CFL parameter with default `0.5`. The common SIMD and CAHD parameter loads explicitly cast the `const void *` lookup result to `const CCTK_REAL *` for C++.
 The SSL SIMD body constructs `noSIMD_SSL_Gaussian_prefactor` as a scalar value and then

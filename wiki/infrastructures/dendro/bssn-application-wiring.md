@@ -13,15 +13,15 @@
 
 Each generated project writes `pars/bssn.toml` (generated defaults) and `pars/q1.par.lowres.toml` (equal-mass TwoPunctures BBH parameters with end time `1000000`, no iteration cap, and native scaling at base cadence `80`, identical across BSSN and fCCZ4 directories; see [q1 versus generated defaults](#q1-versus-generated-defaults), [Runtime Parameter Keys](runtime-parameters.md), and [Production Validation And Deferred Checks](production-validation-and-deferred-checks.md)).
 
-BSSN CAHD (`BSSN_CAHD_C`, default `C_CAHD = 0.06`, `dx` smallest block axis spacing, `dt` timestep, factor of `2` from `chi = W^2`) and SSL (`BSSN_SSL_H` default `0.6`, `BSSN_SSL_SIGMA` default `20`, RK stage time `t`, `W = cf` or `sqrt(cf)`) add:
+CAHD (`CAHD_C`, default `.015`, `h` the smallest block axis spacing, `CFL` from `BSSN_CFL_FACTOR`, factors from `W = exp(-2 phi)` and `chi = exp(-4 phi)`) and SSL (`BSSN_SSL_H` default `0.6`, `BSSN_SSL_SIGMA` default `20`, RK stage time `t`, `W = cf` or `sqrt(cf)`) add:
 
 ```text
-W_rhs     += (C_CAHD / 2) W H dx^2 / (dt (1 + 10 dx^2)),
-chi_rhs   += C_CAHD chi H dx^2 / (dt (1 + 10 dx^2)),
+W_rhs     += 2 CAHD_C W H h / CFL,
+chi_rhs   += 4 CAHD_C chi H h / CFL,
 alpha_rhs -= W SSL_h exp(-t^2 / (2 SSL_sigma^2)) (alpha - W).
 ```
 
-Writing NRPy `CodeParameter` names (`C_CAHD`, `SSL_h`, `SSL_sigma`) instead of their TOML keys triggers an unread-key warning. KO uses constant `KO_DISS_SIGMA` (`enable_CAKO=False`), Brown's covariant term enters `lambdaU` once, and `register_CFunction_BSSN_constraints` emits `BSSN_constraints_order_<fd_order>` (`fd_order` in `4, 6, 8`).
+`CAHD_C` is also its TOML key. Writing `SSL_h` or `SSL_sigma` instead of `BSSN_SSL_H` or `BSSN_SSL_SIGMA` triggers an unread-key warning. The former `BSSN_CAHD_C` key is superseded. KO uses constant `KO_DISS_SIGMA` (`enable_CAKO=False`), Brown's covariant term enters `lambdaU` once, and `register_CFunction_BSSN_constraints` emits `BSSN_constraints_order_<fd_order>` (`fd_order` in `4, 6, 8`).
 
 Initial octrees use Dendro-GR's analytic `punctureDataPhysicalCoord` seed (`MIT` provenance) for mesh construction only. Single-rank `--tpid` solves for `u` and writes spectral coefficients; fresh evolution interpolates full `psi = psi_background + u` (`alpha = W = psi^(-2)` for both `W` and `chi` builds) on the initial mesh and again after initial remeshing:
 
@@ -53,11 +53,38 @@ Evidence (descriptive behavior): `dendro_bssn.py`; `BSSN_gauge_RHSs.py`; `Dendro
 
 ### Optional Yo et al. adjustments
 
-Both `dendro_bssn.py` and `dendro_fccz4.py` accept default-off `--ybs-gamma` and `--ybs-momentum` (KO stays controlled in-script via `enable_KreissOliger_dissipation=True` and runtime `KO_DISS_SIGMA`, with no `--ko` CLI flag):
-- `--ybs-gamma` ([Yo, Baumgarte, and Shapiro](https://arxiv.org/pdf/gr-qc/0209066v2) Eq. (45); [Yo, Lin, and Cao](https://arxiv.org/pdf/1205.5111v2) Eq. (47)): adds the Gamma-constraint adjustment to connection and shift-driver RHSs with runtime `YBS_chi` (default `0`; recommended maximum `2/3` in BSSN alongside Brown's term, `4/3` in fCCZ4; see [YBS Gamma-Constraint Adjustment](../../equations/general-relativity/ybs-gamma-constraint-adjustment.md) and [fCCZ4 Implementation](../../equations/general-relativity/fccz4-implementation-and-validation.md)).
-- `--ybs-momentum` (Yo, Lin, and Cao Eq. (56)): adds the symmetric trace-free gradient of the lower conformal momentum residual to `a_rhsDD` scaled by `C_YBS_mom * BSSN_CFL_FACTOR * min(abs(dx), abs(dy), abs(dz)) * W` (`C_YBS_mom` default `0`, recommended `1.75`, no added gridfunctions; see [YBS-MOM](../../equations/general-relativity/ybs-momentum-damping.md#strength-and-timestep-bound)).
+Both examples compile CAHD by default (`--cahd`); `--no-cahd` omits it. They also accept default-off `--ccd` and `--camd` (KO stays controlled in-script via `enable_KreissOliger_dissipation=True` and runtime `KO_DISS_SIGMA`, with no `--ko` CLI flag):
+- `--ccd` ([Yo, Baumgarte, and Shapiro](https://arxiv.org/pdf/gr-qc/0209066v2) Eq. (45); [Yo, Lin, and Cao](https://arxiv.org/pdf/1205.5111v2) Eq. (47)): adds the Gamma-constraint adjustment to connection and shift-driver RHSs with runtime `CCD_C` (default `0`; recommended `1` in BSSN alongside Brown's term; matching that divergence coefficient in fCCZ4 uses `5/3`; see [YBS Gamma-Constraint Adjustment](../../equations/general-relativity/ybs-gamma-constraint-adjustment.md) and [fCCZ4 Implementation](../../equations/general-relativity/fccz4-implementation-and-validation.md)).
+- `--camd` (Yo, Lin, and Cao Eq. (56)): adds the symmetric trace-free gradient of the lower conformal momentum residual to `a_rhsDD` scaled by `CAMD_C * min(abs(dx), abs(dy), abs(dz)) * W / BSSN_CFL_FACTOR` (`CAMD_C` default `0`, recommended `.0625`, no added gridfunctions; see [YBS-MOM](../../equations/general-relativity/ybs-momentum-damping.md#strength-and-timestep-bound)).
 
 Evidence (descriptive behavior): `dendro_bssn.py::parse_args`; `dendro_fccz4.py::parse_args`; `Dendro/general_relativity/rhs_eval.py`; `Dendro/CodeParameters.py`.
+
+The Python options are `enable_CAHD`, `enable_CAMD`, and `enable_CCD`.
+`enable_CAMD` replaces `enable_YBS_momentum_constraint_adjustment`, while
+`enable_CCD` replaces `enable_YBS_Gamma_constraint_adjustment`. The old
+`--ybs-momentum` / `--ybs-gamma` flags and `C_YBS_mom`, `YBS_chi`,
+`BSSN_CAHD_C` parameter keys are superseded; no aliases are provided.
+The runtime names are `CAHD_C`, `CAMD_C`, and `CCD_C`. Compiling CAMD or CCD
+registers a zero default coefficient; enabling a nonzero term requires both
+the generation flag and its runtime strength. Generated TOMLs print each
+registered parameter description above its key.
+
+For the same spacing and W weight, `CAMD_C = C_YBS_mom * CFL_FACTOR^2`.
+The old BHaH CAHD coefficient similarly maps by `CAHD_C = C_CAHD * CFL_FACTOR^2`.
+The former softened Dendro BSSN formula instead depends on the global
+timestep and level, so it has no single coefficient conversion at every
+spacing. The new local-spacing prescription intentionally replaces it.
+Checkpoint metadata stores the generated parameter-name list: checkpoints
+using the superseded names do not satisfy the new list and are rejected.
+
+For example, generate both optional terms with `--camd --ccd`, then set
+the following root TOML keys for the recommended BSSN strengths:
+
+```toml
+CAHD_C = 0.015
+CAMD_C = 0.0625
+CCD_C = 1.0
+```
 
 ### q1 versus generated defaults
 
@@ -67,10 +94,10 @@ Printed `--tpid` and MPI commands pass `pars/q1.par.lowres.toml` rather than `pa
 | --- | --- | --- |
 | `ETA_CONST` | `1.0` | `2.0` |
 | `TPID_FILEPREFIX` | `tp` | `tp_q001` |
-| `BSSN_CAHD_C` | `0.06` | `0.06` (`pars/fccz4.toml` sets `0.15`) |
+| `CAHD_C` | `.015` | `.015` (also the fCCZ4 default) |
 | `BSSN_ELE_ORDER` | `--fd-order` value | `6` |
 
-Running the printed commands therefore uses `eta = 2.0`, `C_CAHD = 0.06`, and order `6` in both BSSN and fCCZ4; running `pars/bssn.toml` alone leaves unset keys at host fallbacks (no horizon finder, constant wavelet tolerance, no Nyquist refinement, 1 VTU field per group; see [Runtime Parameter Keys](runtime-parameters.md)).
+Running the printed commands therefore uses `eta = 2.0`, `CAHD_C = .015`, and order `6` in both BSSN and fCCZ4; running `pars/bssn.toml` alone leaves unset keys at host fallbacks (no horizon finder, constant wavelet tolerance, no Nyquist refinement, 1 VTU field per group; see [Runtime Parameter Keys](runtime-parameters.md)).
 
 Evidence (descriptive behavior): `nrpy/examples/q1.par.lowres.toml`; `Dendro/param_toml.py::generate_default_parfile`; `Dendro/main_cpp.py::output_main_cpp`.
 

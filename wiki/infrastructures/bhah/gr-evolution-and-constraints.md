@@ -11,12 +11,12 @@ BHaH's general-relativity evolution modules wrap symbolic expressions from `nrpy
 
 ### RHS Registration And YBS Options
 
-`rhs_eval.py::register_CFunction_rhs_eval(..., enable_fCCZ4=False, enable_YBS_Gamma_constraint_adjustment=False, enable_YBS_momentum_constraint_adjustment=False)` assembles BSSN in-module (`BSSN_RHSs` + `BSSN_gauge_RHSs` + Kreiss-Oliger / CAKO, CAHD, and slow-start-lapse terms on copied cached dictionaries) by default, and delegates symbolic RHS/gauge/dissipation/CAHD/SSL assembly to `fCCZ4_system.py::build_fccz4_expression_bundle` when `enable_fCCZ4=True`.
+`rhs_eval.py::register_CFunction_rhs_eval(..., enable_fCCZ4=False, enable_CCD=False, enable_CAMD=False)` assembles BSSN in-module (`BSSN_RHSs` + `BSSN_gauge_RHSs` + Kreiss-Oliger / CAKO, CAHD, and slow-start-lapse terms on copied cached dictionaries) by default, and delegates symbolic RHS/gauge/dissipation/CAHD/SSL assembly to `fCCZ4_system.py::build_fccz4_expression_bundle` when `enable_fCCZ4=True`.
 Both branches map sorted RHS names to `rhs_gfs` via `BHaHGridFunction.access_gf` and emit an interior `simple_loop` with `vetU`-controlled upwinding, optional SIMD/CUDA intrinsics, and signature `(const commondata_struct *restrict commondata, const params_struct *restrict params, const rfm_struct *restrict rfmstruct, ...)` when `enable_rfm_precompute=True` versus `(const commondata_struct *restrict commondata, const params_struct *restrict params, const REAL *restrict x0, const REAL *restrict x1, const REAL *restrict x2, ...)` when `False`.
 
-When `enable_YBS_Gamma_constraint_adjustment=True`, `register_CFunction_rhs_eval` leaves the coordinate/options string unchanged, registers runtime `CodeParameter` `YBS_chi` (default `0`) after the parallel-registration guard, and forwards the boolean to the symbolic caches (separate internal cache per formulation). `two_blackholes_collide.py`, `blackhole_spectroscopy.py`, `superB_two_blackholes_collide.py`, and `superB_blackhole_spectroscopy.py` pass an explicit `False` constant with no CLI switch.
+When `enable_CCD=True`, `register_CFunction_rhs_eval` leaves the coordinate/options string unchanged, registers runtime `CodeParameter` `CCD_C` (default `0`) after the parallel-registration guard, and forwards the boolean to the symbolic caches (separate internal cache per formulation). `two_blackholes_collide.py`, `blackhole_spectroscopy.py`, `superB_two_blackholes_collide.py`, and `superB_blackhole_spectroscopy.py` pass an explicit `False` constant with no CLI switch.
 
-Whenever `enable_CAHD` or `enable_YBS_momentum_constraint_adjustment` is enabled, `register_CFunction_rhs_eval` registers `AUXEVOL` gridfunction `"dsmin"` (emitted C index macro `DSMINGF`); when `enable_YBS_momentum_constraint_adjustment=True`, it also registers runtime `CodeParameter` `C_YBS_mom` (default `0`, recommended `1.75`), modifying `a_rhsDD` in place without adding evolved fields, initial-data steps, boundary conditions, or KO terms. `blackhole_spectroscopy.py` keeps `enable_YBS_momentum_constraint_adjustment=False` and schedules `dsmin_gf.py::register_CFunction_dsmin_auxevol_gridfunction` whenever either CAHD or YBS-MOM is enabled.
+Whenever `enable_CAHD` or `enable_CAMD` is enabled, `register_CFunction_rhs_eval` registers `AUXEVOL` gridfunction `"dsmin"` (emitted C index macro `DSMINGF`); when `enable_CAMD=True`, it also registers runtime `CodeParameter` `CAMD_C` (default `0`, recommended `.0625`), modifying `a_rhsDD` in place without adding evolved fields, initial-data steps, boundary conditions, or KO terms. `blackhole_spectroscopy.py` keeps `enable_CAMD=False` and schedules `dsmin_gf.py::register_CFunction_dsmin_auxevol_gridfunction` whenever either CAHD or YBS-MOM is enabled.
 
 Evidence (descriptive behavior): `BHaH/general_relativity/rhs_eval.py::register_CFunction_rhs_eval`; `fCCZ4_system.py::build_fccz4_expression_bundle`; `BHaH/general_relativity/dsmin_gf.py`; `blackhole_spectroscopy.py`; `two_blackholes_collide.py`.
 
@@ -41,6 +41,10 @@ Projection is opt-in: `blackhole_spectroscopy.py` (for both BSSN and `--fccz4`) 
 
 Evidence (descriptive behavior): `constraints_eval.py`; `enforce_detgbar_equals_detghat_trAzero.py::register_CFunction_enforce_detgbar_equals_detghat_trAzero`; `BSSN_algebraic_constraints.py::BSSN_algebraic_constraints`; `blackhole_spectroscopy.py`; `two_blackholes_collide.py`.
 
+CAHD uses `CAHD_C = .015` and adds `-CAHD_C * dsmin / CFL_FACTOR * H` to the phi equation, with the W/chi chain rule applied when those variables are evolved. CAMD uses `CAMD_C * W * dsmin / CFL_FACTOR` multiplying its existing covariant STF operator; CCD uses `CCD_C` with recommended BSSN strength `1` and default `0`.
+
+Evidence (descriptive behavior): `BHaH/general_relativity/rhs_eval.py::register_CFunction_rhs_eval`; `fCCZ4_system.py::build_fccz4_expression_bundle`.
+
 ## Sources
 
 - [rhs_eval.py](../../../nrpy/infrastructures/BHaH/general_relativity/rhs_eval.py) - `register_CFunction_rhs_eval`, `register_CFunction_rhs_eval_with_Ricci`
@@ -58,8 +62,8 @@ Evidence (descriptive behavior): `constraints_eval.py`; `enforce_detgbar_equals_
 - [c_codegen.py](../../../nrpy/c_codegen.py) - `gridfunction_management_and_FD_codegen`
 - [blackhole_spectroscopy.py](../../../nrpy/examples/blackhole_spectroscopy.py) - `--fccz4`, CPU tiling, stored derivatives, projection hooks
 - [two_blackholes_collide.py](../../../nrpy/examples/two_blackholes_collide.py) - BSSN RHS, stored derivatives, projection hooks
-- [superB_two_blackholes_collide.py](../../../nrpy/examples/superB_two_blackholes_collide.py) - forwarded `enable_YBS_Gamma_constraint_adjustment=False`
-- [superB_blackhole_spectroscopy.py](../../../nrpy/examples/superB_blackhole_spectroscopy.py) - forwarded `enable_YBS_Gamma_constraint_adjustment=False`
+- [superB_two_blackholes_collide.py](../../../nrpy/examples/superB_two_blackholes_collide.py) - forwarded `enable_CCD=False`
+- [superB_blackhole_spectroscopy.py](../../../nrpy/examples/superB_blackhole_spectroscopy.py) - forwarded `enable_CCD=False`
 - [rhs_eval_OnePlusLog_GammaDriving2ndOrder_Covariant_SinhSpherical_RbargfsFalse_T4munuFalse_ImprovementsFalse.py](../../../nrpy/infrastructures/BHaH/general_relativity/tests/rhs_eval_OnePlusLog_GammaDriving2ndOrder_Covariant_SinhSpherical_RbargfsFalse_T4munuFalse_ImprovementsFalse.py) - `trusted_dict`
 - [fCCZ4_system.py](../../../nrpy/equations/general_relativity/fCCZ4_system.py) - `build_fccz4_expression_bundle`
 
@@ -67,4 +71,4 @@ Evidence (descriptive behavior): `constraints_eval.py`; `enforce_detgbar_equals_
 
 - Depends on: [BSSN Family](../../equations/general-relativity/bssn-family.md)
 - Depends on: [fCCZ4 Implementation, Assembly, And Validation](../../equations/general-relativity/fccz4-implementation-and-validation.md)
-- Depends on: [YBS-MOM Timestep-Scaled Momentum Adjustment](../../equations/general-relativity/ybs-momentum-damping.md)
+- Depends on: [CAMD Momentum-Constraint Adjustment](../../equations/general-relativity/ybs-momentum-damping.md)

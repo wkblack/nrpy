@@ -5,19 +5,19 @@
 
 ## Summary
 
-`nrpy.examples.dendro_fccz4` generates `Dendro_NRPy_fCCZ4` with code-generation conformal-factor selection (`W` default or `chi`), appending `Theta_fCCZ4` as the 25th evolved field after the 24 BSSN-ordered components. It uses centered finite differences, slow-start lapse (SSL), constant default `eta = 1`, its own `dt`-scaled fCCZ4 CAHD formula, and separate `Ricci_eval_order_N` and `rhs_eval_order_N` kernels while sharing TwoPunctures, GW/ADM extraction, parameter dumps, and VTU output with BSSN.
+`nrpy.examples.dendro_fccz4` generates `Dendro_NRPy_fCCZ4` with code-generation conformal-factor selection (`W` default or `chi`), appending `Theta_fCCZ4` as the 25th evolved field after the 24 BSSN-ordered components. It uses centered finite differences, slow-start lapse (SSL), constant default `eta = 1`, the shared spacing-over-CFL CAHD formula, and separate `Ricci_eval_order_N` and `rhs_eval_order_N` kernels while sharing TwoPunctures, GW/ADM extraction, parameter dumps, and VTU output with BSSN.
 
 ## Detail
 
 ### fCCZ4 Equations, CAHD, And Runtime Parameters
 
-Each generated directory writes `pars/fccz4.toml` (generated defaults, including `BSSN_CAHD_C = 0.15`) and `pars/q1.par.lowres.toml` (identical to the BSSN copy, overriding `BSSN_CAHD_C` to `0.06`, `ETA_CONST` to `2.0`, and `BSSN_ELE_ORDER` to `6`; see [q1 versus generated defaults](bssn-application-wiring.md#q1-versus-generated-defaults) and [Production Validation And Deferred Checks](production-validation-and-deferred-checks.md)). `--ybs-gamma`, `--ybs-momentum`, and in-script KO follow [Optional Yo et al. adjustments](bssn-application-wiring.md#optional-yo-et-al-adjustments), with the fCCZ4 shift driver receiving the YBS-adjusted fCCZ4 connection RHS rather than Brown's BSSN term.
+Each generated directory writes `pars/fccz4.toml` (generated defaults, including `CAHD_C = .015`) and `pars/q1.par.lowres.toml` (identical to the BSSN copy, setting the same `CAHD_C = .015` but overriding `ETA_CONST` to `2.0`, and `BSSN_ELE_ORDER` to `6`; see [q1 versus generated defaults](bssn-application-wiring.md#q1-versus-generated-defaults) and [Production Validation And Deferred Checks](production-validation-and-deferred-checks.md)). `--ccd`, `--camd`, and in-script KO follow [Optional Yo et al. adjustments](bssn-application-wiring.md#optional-yo-et-al-adjustments), with the fCCZ4 shift driver receiving the YBS-adjusted fCCZ4 connection RHS rather than Brown's BSSN term.
 
-Unlike BSSN's `dx^2 / dt` scaling, Dendro's fCCZ4 CAHD scales linearly with `dt` using runtime `C_CAHD` (`BSSN_CAHD_C`, default `0.15`; factor `4` vs `2` from `chi = W^2`):
+Both formulations add `-CAHD_C * dsmin / CFL_FACTOR * H` to the phi equation, using default `CAHD_C = .015` and the local block spacing. The W and chi chain rules give:
 
 ```text
-W_rhs   += 2 C_CAHD W H dt     (W evolution),
-chi_rhs += 4 C_CAHD chi H dt   (chi evolution).
+W_rhs   += 2 CAHD_C W H dsmin / CFL_FACTOR     (W evolution),
+chi_rhs += 4 CAHD_C chi H dsmin / CFL_FACTOR   (chi evolution).
 ```
 
 Here `H` is the BSSN-form Hamiltonian expression (also output alongside `H_Z4` by `fCCZ4_constraints_order_N`), not `H_Z4`. Default `OnePlusLog` slicing evolves `d_t alpha = beta^i d_i alpha - 2 alpha (K - 2 Theta)` plus the SSL term from [BSSN Application Wiring](bssn-application-wiring.md) (`BSSN_SSL_H`, `BSSN_SSL_SIGMA`). Z4 damping coefficients `kappa1` (default `0.1`, no extra `alpha` factor) and `kappa2` (default `0`) are read from TOML keys `kappa1` and `kappa2` (omitted in `q1.par.lowres.toml`), while `kappa3 = 1` is fixed.

@@ -120,8 +120,8 @@ def register_CFunction_rhs_eval(
     OMP_collapse: int = 1,
     validate_expressions: bool = False,
     enable_fCCZ4: bool = False,
-    enable_YBS_Gamma_constraint_adjustment: bool = False,
-    enable_YBS_momentum_constraint_adjustment: bool = False,
+    enable_CCD: bool = False,
+    enable_CAMD: bool = False,
     enable_cfdD_alphadD_vetUdD_gridfunctions: bool = False,
     enable_cpu_tiling: bool = False,
     enable_RK3_accumulation: bool = False,
@@ -141,16 +141,16 @@ def register_CFunction_rhs_eval(
     :param KreissOliger_strength_gauge: Gauge strength for Kreiss-Oliger dissipation.
     :param KreissOliger_strength_nongauge: Non-gauge strength for Kreiss-Oliger dissipation.
     :param enable_CAKO: Whether to enable curvature-aware Kreiss-Oliger dissipation (multiply strength by W).
-    :param enable_CAHD: Whether to enable curvature-aware Hamiltonian-constraint damping.
+    :param enable_CAHD: Whether to enable coarse-grid-adjusted Hamiltonian-constraint damping.
     :param enable_SSL: Whether to enable slow-start lapse.
     :param OMP_collapse: Degree of OpenMP loop collapsing.
     :param validate_expressions: Whether to validate generated sympy expressions against trusted values.
     :param enable_fCCZ4: Use fCCZ4 instead of BSSN evolution equations.
-    :param enable_YBS_Gamma_constraint_adjustment: Enable the YBS connection-constraint
-        adjustment and register the runtime parameter YBS_chi, whose default 0 disables it.
-    :param enable_YBS_momentum_constraint_adjustment: Enable the timestep-scaled,
-        W-weighted Yo--Lin--Cao momentum-constraint adjustment and register the runtime
-        parameter C_YBS_mom, whose default 0 disables it and whose recommended value is 1.75.
+    :param enable_CCD: Enable the YBS connection-constraint
+        adjustment (CCD) and register the runtime parameter CCD_C, whose default 0 disables it.
+    :param enable_CAMD: Enable the W-weighted
+        Yo--Lin--Cao momentum-constraint adjustment (CAMD) and register the runtime
+        parameter CAMD_C, whose default 0 disables it and whose recommended value is 0.0625.
     :param enable_cfdD_alphadD_vetUdD_gridfunctions: Whether to read the first derivatives of
         cf, alpha and vetU from the gridfunctions cfdD_alphadD_vetUdD_eval stores, and to
         build each mixed second derivative of them as a single first derivative of those
@@ -225,44 +225,43 @@ def register_CFunction_rhs_eval(
         + ("_RbarDD_gridfunctions" if enable_RbarDD_gridfunctions else "")
         + ("_T4munu" if enable_T4munu else "")
     )
-    if enable_YBS_Gamma_constraint_adjustment:
+    if enable_CCD:
         par.register_CodeParameter(
             "REAL",
             __name__,
-            "YBS_chi",
+            "CCD_C",
             0.0,
             commondata=True,
             add_to_parfile=True,
             description=(
-                "2/3 (BSSN) or 4/3 (fCCZ4) = recommended; the usual xi=1 choice of "
-                "Yo, Lin, and Cao, which gives the same C^i Dbar_k beta^k coefficient "
-                "in both formulations. Range: 0 (off) up to the recommended value; "
-                "no stability bound was derived, and negative values should not be used."
+                "1.0 = recommended for BSSN; connection-constraint damping (CCD) strength a in "
+                "d_t Lambdabar^i += -a C^i Dbar_k beta^k with C^i = Lambdabar^i - Delta^i. "
+                "fCCZ4 adds +(2/3) C^i Dbar_k beta^k in its baseline, so it matches a BSSN "
+                "value a with a + 2/3. No full-system stability bound was "
+                "derived, and negative values should not be used."
             ),
         )
-    if enable_CAHD or enable_YBS_momentum_constraint_adjustment:
+    if enable_CAHD or enable_CAMD:
         if "dsmin" not in gri.glb_gridfcs_dict:
             _ = gri.register_gridfunctions(
                 "dsmin",
                 group="AUXEVOL",
                 gf_array_name="auxevol_gfs",
             )
-    if enable_YBS_momentum_constraint_adjustment:
+    if enable_CAMD:
         par.register_CodeParameter(
             "REAL",
             __name__,
-            "C_YBS_mom",
+            "CAMD_C",
             0.0,
             commondata=True,
             add_to_parfile=True,
             description=(
-                "1.75 = recommended; diffusive damping of momentum-constraint "
-                "violations, weighted by the conformal factor W, which vanishes at "
-                "punctures and attenuates the term there. Range: 0 (off) to about 2 "
-                "at CFL_FACTOR = 0.45 when W <= 1 everywhere. "
-                "Stability needs C_YBS_mom * CFL_FACTOR^2 * lambda_FD * W * ds_min / dsmin "
-                "below the Runge-Kutta real-axis limit (2.5 for RK3), where ds_min is "
-                "the smallest grid spacing and lambda_FD = 5.6 to 7.6 for 4th to 8th order."
+                "0.0625 = recommended (C_YBS_mom = 1 at CFL_FACTOR = 0.25); coarse-grid-adjusted "
+                "momentum damping strength c_M in d_t Abar_ij += c_M W (dsmin / CFL_FACTOR) "
+                "[Dbar_(i M_j)]^TF. The conformal factor W vanishes at punctures and attenuates "
+                "the term there. In the isolated flat-space, KO-free model, a conservative RK4 estimate is "
+                "c_M < 3 r_RK / (2 mu_max): about 0.230 for FD6 and 0.214 for FD8."
             ),
         )
     if enable_fCCZ4:
@@ -282,12 +281,8 @@ def register_CFunction_rhs_eval(
             enable_CAKO=enable_CAKO,
             enable_CAHD=enable_CAHD,
             enable_SSL=enable_SSL,
-            enable_YBS_Gamma_constraint_adjustment=(
-                enable_YBS_Gamma_constraint_adjustment
-            ),
-            enable_YBS_momentum_constraint_adjustment=(
-                enable_YBS_momentum_constraint_adjustment
-            ),
+            enable_CCD=(enable_CCD),
+            enable_CAMD=(enable_CAMD),
         )
         local_RHSs_varname_to_expr_dict = ODict(fccz4_bundle.rhs_by_symbol_name)
         betaU = list(fccz4_bundle.upwind_control_vec)
@@ -304,8 +299,8 @@ def register_CFunction_rhs_eval(
         # dictionaries in nrpy/infrastructures/BHaH/general_relativity/tests/.
         bssn_rhs = BSSN_RHSs.get_rhs(
             rhs_cache_key,
-            enable_YBS_Gamma_constraint_adjustment=enable_YBS_Gamma_constraint_adjustment,
-            enable_YBS_momentum_constraint_adjustment=enable_YBS_momentum_constraint_adjustment,
+            enable_CCD=enable_CCD,
+            enable_CAMD=enable_CAMD,
         )
         local_RHSs_varname_to_expr_dict = ODict(
             bssn_rhs.BSSN_RHSs_varname_to_expr_dict.copy()
@@ -316,7 +311,7 @@ def register_CFunction_rhs_eval(
             enable_T4munu=enable_T4munu,
             LapseEvolutionOption=LapseEvolutionOption,
             ShiftEvolutionOption=ShiftEvolutionOption,
-            enable_YBS_Gamma_constraint_adjustment=enable_YBS_Gamma_constraint_adjustment,
+            enable_CCD=enable_CCD,
         )
 
         # Keep cached nongauge RHS dictionaries immutable: gauge and optional
@@ -373,15 +368,27 @@ def register_CFunction_rhs_eval(
                 + ("_RbarDD_gridfunctions" if enable_RbarDD_gridfunctions else "")
                 + ("_T4munu" if enable_T4munu else "")
             ]
-            C_CAHD = par.register_CodeParameter(
-                "REAL", __name__, "C_CAHD", 0.15, commondata=True, add_to_parfile=True
+            CAHD_C = par.register_CodeParameter(
+                "REAL",
+                __name__,
+                "CAHD_C",
+                0.015,
+                commondata=True,
+                add_to_parfile=True,
+                description=(
+                    "0.015 = default; coarse-grid-adjusted Hamiltonian damping strength c_H in "
+                    "d_t phi -= c_H (dsmin / CFL_FACTOR) H. The isolated flat-space, KO-free RK4 estimate is "
+                    "c_H < r_RK / (8 mu_max): about 0.0192 for FD6 and 0.0179 for FD8."
+                ),
             )
             # Initialize CAHD_term assuming phi is the evolved conformal factor.
             # CFL_FACTOR is defined in MoL; dsmin stores raw physical grid spacing.
+            # dsmin / CFL_FACTOR = dsmin^2 / (CFL_FACTOR * dsmin), the grid spacing
+            # squared over the local Courant time, so CAHD_C need not change with CFL_FACTOR.
             CAHD_term = (
-                -C_CAHD
-                * sp.Symbol("CFL_FACTOR", real=True)
+                -CAHD_C
                 * sp.Symbol("dsmin", real=True)
+                / sp.Symbol("CFL_FACTOR", real=True)
                 * Bcon.H
             )
             if EvolvedConformalFactor_cf == "phi":
@@ -463,9 +470,7 @@ def register_CFunction_rhs_eval(
     param_symbols, commondata_symbols = get_params_commondata_symbols_from_expr_list(
         expr_list, exclude=[f"xx{j}" for j in range(3)]
     )
-    if (
-        enable_CAHD or enable_YBS_momentum_constraint_adjustment
-    ) and "CFL_FACTOR" not in commondata_symbols:
+    if (enable_CAHD or enable_CAMD) and "CFL_FACTOR" not in commondata_symbols:
         commondata_symbols.append("CFL_FACTOR")
         commondata_symbols.sort()
 
@@ -765,8 +770,8 @@ if __name__ == "__main__":
                     enable_CAKO=enable_Improvements,
                     enable_CAHD=enable_Improvements,
                     enable_SSL=enable_Improvements,
-                    enable_YBS_Gamma_constraint_adjustment=True,
-                    enable_YBS_momentum_constraint_adjustment=True,
+                    enable_CCD=True,
+                    enable_CAMD=True,
                     validate_expressions=True,
                 )
                 ve.compare_or_generate_trusted_results(

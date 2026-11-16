@@ -37,8 +37,8 @@ Search this table with `rg -n -i -F '<term>' wiki/catalog.md` when router titles
 | [Initial Data](equations/general-relativity/initial-data.md) | Analytic Cartesian and spherical ADM initial-data builders. | InitialData_Cartesian, InitialData_Spherical, BrillLindquist, UIUCBlackHole |
 | [Metric Conversions And Matter](equations/general-relativity/metric-conversions-and-matter.md) | ADM/BSSN/4-metric conversions, T4munu projections, and boosts. | ADM_to_BSSN, BSSN_to_ADM, g4DD, LorentzBoost |
 | [Psi4 And Tetrads](equations/general-relativity/psi4-and-tetrads.md) | Weyl scalar Psi4 evaluation and BCL or symbolic tetrads. | Psi4Tetrads, psi4_re, psi4_im, leave_symbolic |
-| [YBS Gamma-Constraint Adjustment](equations/general-relativity/ybs-gamma-constraint-adjustment.md) | Opt-in YBS_chi Gamma-constraint term in BSSN LambdaBar RHS. | enable_YBS_Gamma_constraint_adjustment, xi, BSSN_RHSs |
-| [YBS-MOM Timestep-Scaled Momentum Adjustment](equations/general-relativity/ybs-momentum-damping.md) | Yo-Lin-Cao momentum-gradient adjustment with CAHD scaling. | C_YBS_mom, enable_YBS_momentum_constraint_adjustment, DSMINGF, dsmin |
+| [YBS Gamma-Constraint Adjustment](equations/general-relativity/ybs-gamma-constraint-adjustment.md) | Opt-in CCD_C Gamma-constraint term in BSSN LambdaBar RHS. | enable_CCD, xi, BSSN_RHSs |
+| [CAMD Momentum-Constraint Adjustment](equations/general-relativity/ybs-momentum-damping.md) | Yo-Lin-Cao momentum-gradient adjustment with CAHD scaling. | CAMD_C, enable_CAMD, DSMINGF, dsmin |
 | [Geometry And Special-Function Support](equations/geometry-and-special-function-support.md) | Basis transforms, fisheye, SO(3)/quaternion rotations, _s Y_{lm}. | BasisTransforms, GeneralRFMFisheye, SO3_rotations, spherical harmonics |
 | [GRHD](equations/grhd.md) | Reference-metric Valencia GRHD conservatives, fluxes, and speeds. | GRHD_Equations, T4UU, u4U, HLL_fluxes |
 | [GRMHD](equations/grmhd.md) | Magnetic stress-energy in GRHD, magnetosonic bounds, HLL fluxes. | GRMHD_Equations, BmagU, smallb4U, Alfven, cmin, cmax |
@@ -83,7 +83,7 @@ Search this table with `rg -n -i -F '<term>' wiki/catalog.md` when router titles
 | [CarpetX GR BSSN RHS And Constraints](infrastructures/carpetx/gr-bssn-rhs-ricci-constraints-and-validation.md) | CarpetX BSSN Ricci, RHS, constraints, and trusted dicts. | ODESolvers_RHS, ODESolvers_PostStep, CCTK_DELTA_SPACE |
 | [CarpetX GR Poststep Repairs](infrastructures/carpetx/gr-poststep-repairs.md) | CarpetX lapse floor and determinant/trace-free Abar repair. | enforce_detgbar_equals_detghat_trAzero, floor_the_lapse |
 | [CarpetX Thorn Assembly And CCL](infrastructures/carpetx/thorn-assembly-configuration-and-ccl-files.md) | CarpetX CCL files, configuration.ccl, and make.code.defn. | USES_INCLUDEs, evol_variables, ET_thorn_name |
-| [BSSN Application Wiring](infrastructures/dendro/bssn-application-wiring.md) | Dendro BSSN W/chi evolution, SSL, CAHD, Brown Lambda, and q1. | Dendro_NRPy_BSSN, C_CAHD, YBS_chi, C_YBS_mom, lambdaU |
+| [BSSN Application Wiring](infrastructures/dendro/bssn-application-wiring.md) | Dendro BSSN W/chi evolution, SSL, CAHD, Brown Lambda, and q1. | Dendro_NRPy_BSSN, CAHD_C, CCD_C, CAMD_C, lambdaU |
 | [Constraints And Diagnostic Norms](infrastructures/dendro/constraints-and-diagnostic-norms.md) | Dendro covariant M_i, H_Z4/M/Lambda norms, and node RMS. | M_CONSTRAINT, LAMBDA_CONSTRAINT, Ctx::diagnostic_output |
 | [fCCZ4 Application Wiring](infrastructures/dendro/fccz4-application-wiring.md) | Dendro fCCZ4 W/chi generation, CAHD, lambdaU init, and DIAG. | Dendro_NRPy_fCCZ4, initial_data_lambdaU, kappa1, kappa2 |
 | [FD Profiles And Conformance](infrastructures/dendro/finite-difference-profiles-and-dendro-conformance.md) | Centered advection, KO order, padding, and BSSN_ELE_ORDER. | KO_FD_ORDER, REQUIRED_PADDING, NGHOSTS |
@@ -92,7 +92,7 @@ Search this table with `rg -n -i -F '<term>' wiki/catalog.md` when router titles
 | [Initial Data And Wave Diagnostics](infrastructures/dendro/initial-data-and-wave-diagnostics.md) | Dendro TwoPunctures setup, ADM integrals, and Psi4 modes. | --tpid, _ADM.dat, Ctx::adm_output, BSSN_GW_RADAII |
 | [Production Validation And Checks](infrastructures/dendro/production-validation-and-deferred-checks.md) | Dendro MPI remesh/restart checks and dendro-validation CI. | dendro_application_check, dendrolib_capability_test, dendrolib-canary |
 | [Project Assembly And Emitters](infrastructures/dendro/project-assembly-and-emitters.md) | Dendro generated C++ layout, CMake sources, and TOML parser. | CMakeLists.py, FetchContent, Dendrolib |
-| [Runtime Parameter Keys](infrastructures/dendro/runtime-parameters.md) | Dendro TOML parameter keys, fallbacks, q1, and guards. | BSSN_CAHD_C, KO_DISS_SIGMA, ETA_CONST, AEH_SOLVER_FREQ |
+| [Runtime Parameter Keys](infrastructures/dendro/runtime-parameters.md) | Dendro TOML parameter keys, fallbacks, q1, and guards. | CAHD_C, KO_DISS_SIGMA, ETA_CONST, AEH_SOLVER_FREQ |
 | [ETLegacy Code Params And Loops](infrastructures/etlegacy/code-parameters-includes-and-loops.md) | ETLegacy Cactus parameter reads, symbols, and CCTK loops. | DECLARE_CCTK_PARAMETERS, CCTK_ParameterGet, cctk_lsh, cctk_nghostzones, SIMD |
 | [GR ADM/BSSN, Slicing, And Matter](infrastructures/etlegacy/gr-adm-bssn-slicing-and-matter-coupling.md) | ETLegacy ADMBase import/export, slicing, and TmunuBase. | Baikal, ADM_to_BSSN, CCTK_INITIAL, ADMBase_PostInitial |
 | [ETLegacy GR BSSN RHS And Constraints](infrastructures/etlegacy/gr-bssn-rhs-ricci-constraints-and-validation.md) | ETLegacy BSSN Ricci, RHS, constraints, and trusted dicts. | MoL_CalcRHS, MoL_PseudoEvolution, RbarDD |

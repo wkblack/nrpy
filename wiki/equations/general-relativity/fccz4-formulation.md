@@ -155,7 +155,7 @@ Nonadvecting:      partial_t beta^i = B^i,
                    partial_t B^i    = (3/4) partial_t Lambdatilde^i - eta B^i.
 ```
 
-When `enable_YBS_Gamma_constraint_adjustment=True`, the three second-order drivers and `NonAdvectingGammaDriving` read the YBS-adjusted `Lambdatilde` RHS once; `Frozen` and both first-order drivers are unchanged.
+When `enable_CCD=True`, the three second-order drivers and `NonAdvectingGammaDriving` read the YBS-adjusted `Lambdatilde` RHS once; `Frozen` and both first-order drivers are unchanged.
 
 Five explicit paper-convention resolutions govern NRPy's equations:
 1. `W = exp(-2 phi)` and `chi = exp(-4 phi)` match NRPy BSSN rather than sign-reversed prose in Mewes et al. Eqs. (33)-(34).

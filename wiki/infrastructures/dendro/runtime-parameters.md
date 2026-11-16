@@ -20,7 +20,7 @@ Host keys are read from the TOML root unless qualified by `[table]` (lines place
 | `BSSN_ELE_ORDER` | `--fd-order` (`6`) | `--fd-order` | `6` | Element/FD order (`4`, `6`, or `8`); must match checkpoint on restore ([Finite-Difference Profiles](finite-difference-profiles-and-dendro-conformance.md)). |
 | `BSSN_RK_TIME_BEGIN`, `BSSN_RK_TIME_END` | `0.0`, `700.0` | `0.0`, `1000000.0` | `0.0`, `1000000.0` | Start and end time (`END > BEGIN`). |
 | `BSSN_MAX_ITERATIONS` | unlimited | `none` | `none` | Root-level step cap. |
-| `BSSN_CFL_FACTOR` | `0.25` | `none` (`0.25` w/ `--ybs-momentum`) | `0.25` | Positive finite factor multiplying finest `min(dx, dy, dz)` (also `CFL_FACTOR` for `--ybs-momentum`). |
+| `BSSN_CFL_FACTOR` | `0.25` | `0.25` with CAHD or CAMD | `0.25` | Positive finite factor multiplying finest `min(dx, dy, dz)`; also the damping `CFL_FACTOR` when either spacing-scaled term is compiled. |
 | `BSSN_TIME_STEP_OUTPUT_FREQ` | `80` | `80` | `80` | Terminal print cadence in steps (per-step lapse check always runs). |
 | `BSSN_GRID_MIN_{X,Y,Z}`, `BSSN_GRID_MAX_{X,Y,Z}` | `-400.0`, `400.0` | `none` | `-400.0`, `400.0` | Domain bounds (`MAX > MIN`, finite widths). |
 | `BSSN_MINDEPTH`, `BSSN_MAXDEPTH` | `4`, `14` | `none` | `4`, `14` | Octree levels (`MIN <= MAX < 31`). |
@@ -66,16 +66,17 @@ Evidence (descriptive behavior): `Dendro/main_cpp.py::output_main_cpp`; `nrpy/ex
 
 ### Registered CodeParameter Coefficients And Startup Rejections
 
-Runtime `CodeParameter` coefficients bind via `Q1_TOML_PARAMETER_NAMES` (writing the unmapped C symbol such as `C_CAHD = 0.15` warns as unread; changed values are rejected on checkpoint restore):
+Runtime `CodeParameter` coefficients bind via `Q1_TOML_PARAMETER_NAMES` (writing a mapped C symbol such as `SSL_h` instead of `BSSN_SSL_H` warns as unread; changed values are rejected on checkpoint restore):
 
 | TOML Key | `CodeParameter` | Default | Scope and notes |
 | --- | --- | --- | --- |
 | `ETA_CONST` | `eta` | `1.0` | Spatially constant shift-driver damping. |
 | `KO_DISS_SIGMA` | `KreissOliger_strength_{gauge,nongauge}` | `0.3` (`0.4` in `pars/<stem>.toml`) | Sets both strengths; exists only when KO is generated. |
 | `BSSN_SSL_H`, `BSSN_SSL_SIGMA` | `SSL_h`, `SSL_sigma` | `0.6`, `20.0` | Slow-start lapse amplitude and width. |
-| `BSSN_CAHD_C` | `C_CAHD` | `0.06` (BSSN), `0.15` (fCCZ4) | CAHD strength. |
+| `CAHD_C` | `CAHD_C` | `.015` | Phi addition `-CAHD_C * dsmin / CFL_FACTOR * H`; both formulations. |
 | `CHI_FLOOR` | `chi_floor` | `1.0e-4` | Strictly positive finite floor on `alpha` and `chi` (`sqrt` for `W`); `<= 0` throws `CHI_FLOOR must be finite and positive` when the floor kernel runs. |
-| `BSSN_CFL_FACTOR`, `YBS_chi`, `C_YBS_mom` | `CFL_FACTOR`, `YBS_chi`, `C_YBS_mom` | `0.25`, `0.0`, `0.0` | Registered conditionally for `--ybs-momentum` / `--ybs-gamma`. |
+| `BSSN_CFL_FACTOR` | `CFL_FACTOR` | `.25` | Registered with CAHD or CAMD. |
+| `CCD_C`, `CAMD_C` | `CCD_C`, `CAMD_C` | `0`, `0` | Registered by `--ccd` / `--camd`; recommended active BSSN strengths `1` / `.0625`. |
 | `kappa1`, `kappa2` | `kappa1`, `kappa2` | `0.1`, `0.0` | fCCZ4 Z4 damping coefficients (fCCZ4 only). |
 
 Any key in `pars/q1.par.lowres.toml` omitted from the tables above (including `BSSN_WAVELET_TOL_FUNCTION_R{0,1}` and `BSSN_RK_TYPE`) is unread and triggers a rank-0 warning.

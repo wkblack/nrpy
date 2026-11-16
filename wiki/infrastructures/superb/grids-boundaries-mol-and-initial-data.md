@@ -113,10 +113,10 @@ fCCZ4 RHSs, gauge RHSs, or `Theta_fCCZ4`.
 Evidence (scientific/interface requirement): `superB/initial_data.py::register_CFunction_initial_data`; `superB_two_blackholes_collide.py`; corroboration: `superB/MoL.py::register_CFunctions`.
 
 Both checked superB black-hole examples explicitly set
-`enable_YBS_Gamma_constraint_adjustment = False` and forward it to the shared
+`enable_CCD = False` and forward it to the shared
 BHaH `register_CFunction_rhs_eval`. superB maintains no separate YBS RHS fork:
 changing that source constant routes through the BHaH registrar to the BSSN
-RHS and gauge equation modules, while the enabled-only runtime `YBS_chi` parameter uses
+RHS and gauge equation modules, while the enabled-only runtime `CCD_C` parameter uses
 the reused BHaH CodeParameters flow. Neither example exposes a command-line
 switch for the code-generation choice.
 

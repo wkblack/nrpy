@@ -53,8 +53,8 @@ def register_CFunction_rhs_eval(
     CoordSystem: str = "Cartesian",
     LapseEvolutionOption: str = "OnePlusLog",
     ShiftEvolutionOption: str = "GammaDriving2ndOrder_Covariant__Hatted",
-    enable_YBS_Gamma_constraint_adjustment: bool = False,
-    enable_YBS_momentum_constraint_adjustment: bool = False,
+    enable_CCD: bool = False,
+    enable_CAMD: bool = False,
     enable_SSL: bool = False,
     enable_CAHD: bool = False,
     enable_intrinsics: bool,
@@ -69,14 +69,15 @@ def register_CFunction_rhs_eval(
     :param CoordSystem: Reference-metric coordinate system.
     :param LapseEvolutionOption: Lapse gauge condition.
     :param ShiftEvolutionOption: Shift gauge condition.
-    :param enable_YBS_Gamma_constraint_adjustment: Add the Yo et al. Gamma-constraint
-        term and register YBS_chi, whose default 0 disables it.
-    :param enable_YBS_momentum_constraint_adjustment: Add Yo et al. momentum
-        damping with coefficient C_YBS_mom times CFL_FACTOR times local spacing
-        times the conformal factor W, and register C_YBS_mom, whose default 0
-        disables it and whose recommended value is 1.75.
+    :param enable_CCD: Add the Yo et al. Gamma-constraint
+        term (CCD) and register CCD_C, whose default 0 disables it.
+    :param enable_CAMD: Add Yo et al. momentum
+        damping (CAMD) with coefficient CAMD_C times local spacing over CFL_FACTOR
+        times the conformal factor W, and register CAMD_C, whose default 0
+        disables it and whose recommended value is 0.0625.
     :param enable_SSL: Add slow-start lapse.
-    :param enable_CAHD: Add formulation-specific Hamiltonian damping.
+    :param enable_CAHD: Add coarse-grid-adjusted Hamiltonian damping with
+        coefficient CAHD_C times local spacing over CFL_FACTOR.
     :param enable_intrinsics: Generate SIMD-intrinsic kernels; every vector stays
         inside its own row.
     :return: Updated NRPy registries, or ``None`` while collecting parallel work.
@@ -109,46 +110,51 @@ def register_CFunction_rhs_eval(
         staged_coord_system = CoordSystem + "_RbarDD_gridfunctions"
         quantities = BSSN_quantities[staged_coord_system]
 
-        if enable_YBS_Gamma_constraint_adjustment:
+        if enable_CCD:
             par.register_CodeParameter(
                 "REAL",
                 __name__,
-                "YBS_chi",
+                "CCD_C",
                 0.0,
                 add_to_parfile=True,
                 description=(
-                    "2/3 (BSSN) or 4/3 (fCCZ4) = recommended; the usual xi=1 choice "
-                    "of Yo, Lin, and Cao, which gives the same C^i Dbar_k beta^k "
-                    "coefficient in both formulations. Range: 0 (off) up to the "
-                    "recommended value; no stability bound was derived, and negative "
-                    "values should not be used."
+                    "1.0 = recommended for BSSN; connection-constraint damping (CCD) strength a in "
+                    "d_t Lambdabar^i += -a C^i Dbar_k beta^k with C^i = Lambdabar^i - Delta^i. "
+                    "fCCZ4 adds +(2/3) C^i Dbar_k beta^k in its baseline, so it matches a BSSN "
+                    "value a with a + 2/3. No full-system stability bound was "
+                    "derived, and negative values should not be used."
                 ),
             )
-        if enable_YBS_momentum_constraint_adjustment:
-            par.register_CodeParameters(
+        if enable_CAMD:
+            par.register_CodeParameter(
                 "REAL",
                 __name__,
-                ["C_YBS_mom", "CFL_FACTOR"],
-                [0.0, 0.25],
+                "CAMD_C",
+                0.0,
                 add_to_parfile=True,
-                descriptions=[
-                    "1.75 = recommended; diffusive damping of momentum-constraint "
-                    "violations, weighted by the conformal factor W, which vanishes "
-                    "at punctures and attenuates the term there. Range: 0 (off) to "
-                    "about 2 at CFL_FACTOR = 0.45 when W <= 1 everywhere. "
-                    "Stability needs C_YBS_mom * CFL_FACTOR^2 * lambda_FD * W * ds_min "
-                    "/ dsmin below the Runge-Kutta real-axis limit (2.5 for RK3, 2.8 "
-                    "for RK4), where ds_min is the smallest grid spacing and lambda_FD "
-                    "= 5.6 to 7.6 for 4th to 8th order.",
-                    "Evolution CFL factor.",
-                ],
+                description=(
+                    "0.0625 = recommended (C_YBS_mom = 1 at CFL_FACTOR = 0.25); coarse-grid-adjusted "
+                    "momentum damping strength c_M in d_t Abar_ij += c_M W (dsmin / CFL_FACTOR) "
+                    "[Dbar_(i M_j)]^TF. The conformal factor W vanishes at punctures and attenuates "
+                    "the term there. In the isolated flat-space, KO-free model, a conservative RK4 estimate is "
+                    "c_M < 3 r_RK / (2 mu_max): about 0.230 for FD6 and 0.214 for FD8."
+                ),
+            )
+        if enable_CAHD or enable_CAMD:
+            par.register_CodeParameter(
+                "REAL",
+                __name__,
+                "CFL_FACTOR",
+                0.25,
+                add_to_parfile=True,
+                description="Evolution CFL factor.",
             )
 
         if enable_fCCZ4:
             fccz4_rhs = fCCZ4_RHSs.get_rhs(
                 staged_coord_system,
-                enable_YBS_Gamma_constraint_adjustment=enable_YBS_Gamma_constraint_adjustment,
-                enable_YBS_momentum_constraint_adjustment=enable_YBS_momentum_constraint_adjustment,
+                enable_CCD=enable_CCD,
+                enable_CAMD=enable_CAMD,
             )
             rhs_by_symbol_name: Dict[str, sp.Expr] = OrderedDict(
                 sorted(fccz4_rhs.fCCZ4_RHSs_varname_to_expr_dict.items())
@@ -159,7 +165,7 @@ def register_CFunction_rhs_eval(
                 enable_T4munu=False,
                 LapseEvolutionOption=LapseEvolutionOption,
                 ShiftEvolutionOption=ShiftEvolutionOption,
-                enable_YBS_Gamma_constraint_adjustment=enable_YBS_Gamma_constraint_adjustment,
+                enable_CCD=enable_CCD,
                 evolved_connection_rhsU=fccz4_rhs.Lambdatilde_rhsU,
             )
             if LapseEvolutionOption == "OnePlusLog":
@@ -167,8 +173,8 @@ def register_CFunction_rhs_eval(
         else:
             bssn_rhs = BSSN_RHSs.get_rhs(
                 staged_coord_system,
-                enable_YBS_Gamma_constraint_adjustment=enable_YBS_Gamma_constraint_adjustment,
-                enable_YBS_momentum_constraint_adjustment=enable_YBS_momentum_constraint_adjustment,
+                enable_CCD=enable_CCD,
+                enable_CAMD=enable_CAMD,
             )
             rhs_by_symbol_name = OrderedDict(
                 sorted(bssn_rhs.BSSN_RHSs_varname_to_expr_dict.items())
@@ -179,7 +185,7 @@ def register_CFunction_rhs_eval(
                 enable_T4munu=False,
                 LapseEvolutionOption=LapseEvolutionOption,
                 ShiftEvolutionOption=ShiftEvolutionOption,
-                enable_YBS_Gamma_constraint_adjustment=enable_YBS_Gamma_constraint_adjustment,
+                enable_CCD=enable_CCD,
             )
 
         rhs_by_symbol_name["alpha_rhs"] = alpha_rhs
@@ -229,32 +235,28 @@ def register_CFunction_rhs_eval(
                 hamiltonian_constraint = BSSN_constraints[staged_coord_system].H
             finally:
                 par.set_parval_from_str(gate, previous_gate)
-            if enable_fCCZ4:
-                c_cahd = par.register_CodeParameter(
-                    "REAL", __name__, "C_CAHD", 0.15, add_to_parfile=True
-                )
-                rhs_by_symbol_name["cf_rhs"] += (
-                    (4 if conformal_factor == "chi" else 2)
-                    * c_cahd
-                    * quantities.cf
-                    * hamiltonian_constraint
-                    * sp.Symbol("time_step")
-                )
-            else:
-                c_cahd = par.register_CodeParameter(
-                    "REAL", __name__, "C_CAHD", 0.06, add_to_parfile=True
-                )
-                rhs_by_symbol_name["cf_rhs"] += (
-                    (1 if conformal_factor == "chi" else sp.Rational(1, 2))
-                    * c_cahd
-                    * quantities.cf
-                    * hamiltonian_constraint
-                    * sp.Symbol("grid_spacing") ** 2
-                    / (
-                        sp.Symbol("time_step")
-                        * (1 + 10 * sp.Symbol("grid_spacing") ** 2)
-                    )
-                )
+            cahd_c = par.register_CodeParameter(
+                "REAL",
+                __name__,
+                "CAHD_C",
+                0.015,
+                add_to_parfile=True,
+                description=(
+                    "0.015 = default; coarse-grid-adjusted Hamiltonian damping strength c_H in "
+                    "d_t phi -= c_H (dsmin / CFL_FACTOR) H. The isolated flat-space, KO-free RK4 estimate is "
+                    "c_H < r_RK / (8 mu_max): about 0.0192 for FD6 and 0.0179 for FD8."
+                ),
+            )
+            # d_t phi -= CAHD_C (dsmin / CFL_FACTOR) H, with d_t W = -2 W d_t phi
+            # and d_t chi = -4 chi d_t phi. Both BSSN and fCCZ4 use this form.
+            rhs_by_symbol_name["cf_rhs"] += (
+                (4 if conformal_factor == "chi" else 2)
+                * cahd_c
+                * quantities.cf
+                * hamiltonian_constraint
+                * sp.Symbol("dsmin", real=True)
+                / sp.Symbol("CFL_FACTOR", real=True)
+            )
 
         # Step 3: Map the right-hand sides to evolved fields with centered derivatives.
         rhs_by_gridfunction_name: Dict[str, sp.Expr] = OrderedDict()
@@ -375,16 +377,8 @@ def register_CFunction_rhs_eval(
             )
         )
         # Step 6: Emit the block preamble, pointer bindings, and point loop.
-        # Only the BSSN CAHD term reads grid_spacing; emit it only when used.
-        grid_spacing_line = (
-            f"const {scalar_type} {prefix}grid_spacing = "
-            "std::min({dx_block[0], dx_block[1], dx_block[2]});\n"
-            if any(
-                expression.has(sp.Symbol("grid_spacing"))
-                for expression in kernel_expressions
-            )
-            else ""
-        )
+        # The CAHD and momentum-damping terms read the local spacing dsmin.
+        emit_dsmin = enable_CAHD or enable_CAMD
         geometry = rf"""const std::ptrdiff_t offset = static_cast<std::ptrdiff_t>(block.getOffset());
 const unsigned nx_block = block.getAllocationSzX();
 const unsigned ny_block = block.getAllocationSzY();
@@ -397,11 +391,11 @@ const {scalar_type} dx_block[3] = {{
     block.computeDx(domain_min, domain_max),
     block.computeDy(domain_min, domain_max),
     block.computeDz(domain_min, domain_max)}};
-{grid_spacing_line}[[maybe_unused]] const {scalar_type} pmin_block[3] = {{
+[[maybe_unused]] const {scalar_type} pmin_block[3] = {{
     GRIDX_TO_X(block.getBlockNode().minX()) - padding_block * dx_block[0],
     GRIDY_TO_Y(block.getBlockNode().minY()) - padding_block * dx_block[1],
     GRIDZ_TO_Z(block.getBlockNode().minZ()) - padding_block * dx_block[2]}};"""
-        if enable_YBS_momentum_constraint_adjustment:
+        if emit_dsmin:
             geometry += (
                 f"\nconst {scalar_type} {prefix}dsmin = "
                 "std::min({std::abs(dx_block[0]), std::abs(dx_block[1]), "
@@ -434,9 +428,8 @@ const {scalar_type} dx_block[3] = {{
                 *used_codeparameters,
                 "stage_time",
                 "time_step",
-                *(("grid_spacing",) if grid_spacing_line else ()),
                 *(("SSL_exp_factor",) if enable_SSL else ()),
-                *(("dsmin",) if enable_YBS_momentum_constraint_adjustment else ()),
+                *(("dsmin",) if emit_dsmin else ()),
             )
             preloop += [
                 f"[[maybe_unused]] const REAL_SIMD_ARRAY {name} = ConstSIMD(NOSIMD{name});"
