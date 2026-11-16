@@ -94,29 +94,31 @@ def register_CFunction_rhs_eval(
   const REAL_SIMD_ARRAY invdxx0 CCTK_ATTRIBUTE_UNUSED = ConstSIMD(1.0/CCTK_DELTA_SPACE(0));
   const REAL_SIMD_ARRAY invdxx1 CCTK_ATTRIBUTE_UNUSED = ConstSIMD(1.0/CCTK_DELTA_SPACE(1));
   const REAL_SIMD_ARRAY invdxx2 CCTK_ATTRIBUTE_UNUSED = ConstSIMD(1.0/CCTK_DELTA_SPACE(2));
-  const CCTK_REAL *param_PI CCTK_ATTRIBUTE_UNUSED = CCTK_ParameterGet("PI", "{thorn_name}", NULL);
+  const CCTK_REAL *param_PI CCTK_ATTRIBUTE_UNUSED = static_cast<const CCTK_REAL *>(CCTK_ParameterGet("PI", "{thorn_name}", NULL));
   const REAL_SIMD_ARRAY PI CCTK_ATTRIBUTE_UNUSED = ConstSIMD(*param_PI);
-  const CCTK_REAL *param_eta CCTK_ATTRIBUTE_UNUSED = CCTK_ParameterGet("eta", "{thorn_name}", NULL);
+  const CCTK_REAL *param_eta CCTK_ATTRIBUTE_UNUSED = static_cast<const CCTK_REAL *>(CCTK_ParameterGet("eta", "{thorn_name}", NULL));
   const REAL_SIMD_ARRAY eta CCTK_ATTRIBUTE_UNUSED = ConstSIMD(*param_eta);
 """
         if enable_CAKO:
             body += f"""
-  const CCTK_REAL *param_diss_strength_gauge CCTK_ATTRIBUTE_UNUSED = CCTK_ParameterGet("diss_strength_gauge", "{thorn_name}", NULL);
+  const CCTK_REAL *param_diss_strength_gauge CCTK_ATTRIBUTE_UNUSED = static_cast<const CCTK_REAL *>(CCTK_ParameterGet("diss_strength_gauge", "{thorn_name}", NULL));
   const REAL_SIMD_ARRAY diss_strength_gauge CCTK_ATTRIBUTE_UNUSED = ConstSIMD(*param_diss_strength_gauge);
-  const CCTK_REAL *param_diss_strength_nongauge CCTK_ATTRIBUTE_UNUSED = CCTK_ParameterGet("diss_strength_nongauge", "{thorn_name}", NULL);
+  const CCTK_REAL *param_diss_strength_nongauge CCTK_ATTRIBUTE_UNUSED = static_cast<const CCTK_REAL *>(CCTK_ParameterGet("diss_strength_nongauge", "{thorn_name}", NULL));
   const REAL_SIMD_ARRAY diss_strength_nongauge CCTK_ATTRIBUTE_UNUSED = ConstSIMD(*param_diss_strength_nongauge);
 """
         else:
             body += f"""
-  const CCTK_REAL *param_diss_strength CCTK_ATTRIBUTE_UNUSED = CCTK_ParameterGet("diss_strength", "{thorn_name}", NULL);
+  const CCTK_REAL *param_diss_strength CCTK_ATTRIBUTE_UNUSED = static_cast<const CCTK_REAL *>(CCTK_ParameterGet("diss_strength", "{thorn_name}", NULL));
   const REAL_SIMD_ARRAY diss_strength CCTK_ATTRIBUTE_UNUSED = ConstSIMD(*param_diss_strength);
 """
         if enable_CAHD:
             body += f"""
-  const CCTK_REAL *param_C_CAHD CCTK_ATTRIBUTE_UNUSED = CCTK_ParameterGet("C_CAHD", "{thorn_name}", NULL);
-  const REAL_SIMD_ARRAY C_CAHD CCTK_ATTRIBUTE_UNUSED = ConstSIMD(*param_C_CAHD);
-  // cahdprefactor = C_CAHD * sp.symbols("CFL_FACTOR") * sp.symbols("dsmin")
-  const REAL_SIMD_ARRAY cahdprefactor CCTK_ATTRIBUTE_UNUSED = MulSIMD(C_CAHD, MulSIMD(,));
+  const CCTK_REAL *param_C_CAHD CCTK_ATTRIBUTE_UNUSED = static_cast<const CCTK_REAL *>(CCTK_ParameterGet("C_CAHD", "{thorn_name}", NULL));
+  const CCTK_REAL *param_CFL_FACTOR__ignore_repeats_Carpet_timeref_factors CCTK_ATTRIBUTE_UNUSED =
+    static_cast<const CCTK_REAL *>(CCTK_ParameterGet("CFL_FACTOR__ignore_repeats_Carpet_timeref_factors", "{thorn_name}", NULL));
+  const CCTK_REAL dsmin CCTK_ATTRIBUTE_UNUSED = fmin(CCTK_DELTA_SPACE(0), fmin(CCTK_DELTA_SPACE(1), CCTK_DELTA_SPACE(2)));
+  const REAL_SIMD_ARRAY cahdprefactor CCTK_ATTRIBUTE_UNUSED =
+    ConstSIMD((*param_C_CAHD) * (*param_CFL_FACTOR__ignore_repeats_Carpet_timeref_factors) * dsmin);
 """
         if enable_SSL:
             body += f"""
@@ -136,8 +138,8 @@ def register_CFunction_rhs_eval(
 """
         if enable_CAHD:
             body += """
-  // cahdprefactor = C_CAHD * sp.symbols("CFL_FACTOR") * sp.symbols("dsmin")
-  const CCTK_REAL cahdprefactor = C_CAHD * ;
+  const CCTK_REAL dsmin CCTK_ATTRIBUTE_UNUSED = fmin(CCTK_DELTA_SPACE(0), fmin(CCTK_DELTA_SPACE(1), CCTK_DELTA_SPACE(2)));
+  const CCTK_REAL cahdprefactor CCTK_ATTRIBUTE_UNUSED = C_CAHD * CFL_FACTOR__ignore_repeats_Carpet_timeref_factors * dsmin;
 """
         if enable_SSL:
             body += """
@@ -273,6 +275,14 @@ def register_CFunction_rhs_eval(
         ]
         _C_CAHD = par.register_CodeParameter(
             "REAL", __name__, "C_CAHD", 0.15, commondata=True, add_to_parfile=True
+        )
+        _CFL_FACTOR = par.register_CodeParameter(
+            "REAL",
+            __name__,
+            "CFL_FACTOR__ignore_repeats_Carpet_timeref_factors",
+            0.5,
+            commondata=True,
+            add_to_parfile=True,
         )
         # Initialize CAHD_term assuming phi is the evolved conformal factor. CFL_FACTOR is defined in MoL.
         # CAHD_term = -C_CAHD * (sp.symbols("CFL_FACTOR") * sp.symbols("dsmin")) * Bcon.H
@@ -435,6 +445,16 @@ if __name__ == "__main__":
                 enable_SSL=enable_improvements,
                 validate_expressions=True,
             )
+            if enable_improvements:
+                cfl_parameter = par.glb_code_params_dict[
+                    "CFL_FACTOR__ignore_repeats_Carpet_timeref_factors"
+                ]
+                assert (
+                    cfl_parameter.cparam_type,
+                    cfl_parameter.defaultvalue,
+                    cfl_parameter.commondata,
+                    cfl_parameter.add_to_parfile,
+                ) == ("REAL", 0.5, True, True)
             trusted_basename = (
                 f"{os.path.splitext(os.path.basename(__file__))[0]}_"
                 f"{LapseEvolOption}_{ShiftEvolOption}_{Coord}_"

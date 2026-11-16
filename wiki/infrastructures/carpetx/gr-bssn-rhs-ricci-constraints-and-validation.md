@@ -91,11 +91,13 @@ or `diss_strength` otherwise. It adds `SSL_h` and `SSL_sigma` only when
 `CFL_FACTOR__ignore_repeats_Carpet_timeref_factors` only when `enable_CAHD` is
 true, and adds `PI` for the `Baikal` thorn path.
 
-Two emitted-code caveats are source-observed and not interpreted here as fixes.
-The CAHD body templates currently leave an empty operand in the SIMD
-`MulSIMD(C_CAHD, MulSIMD(,))` path and in the scalar `C_CAHD * ;` path. The SSL
-SIMD body constructs `noSIMD_SSL_Gaussian_prefactor` as a scalar value and then
+The CAHD preambles use `C_CAHD * CFL_FACTOR__ignore_repeats_Carpet_timeref_factors * dsmin`
+in scalar and SIMD code, where `dsmin` is the smallest `CCTK_DELTA_SPACE`
+component. The RHS registrar registers the CFL parameter with default `0.5`. The common SIMD and CAHD parameter loads explicitly cast the `const void *` lookup result to `const CCTK_REAL *` for C++.
+The SSL SIMD body constructs `noSIMD_SSL_Gaussian_prefactor` as a scalar value and then
 passes `*noSIMD_SSL_Gaussian_prefactor` to `ConstSIMD()`.
+
+Evidence (descriptive behavior): `CarpetX/general_relativity/rhs_eval.py::register_CFunction_rhs_eval`.
 
 ### Constraints Kernel And RHS Trusted Validation
 
